@@ -1,0 +1,924 @@
+
+- **Field**
+  - Consists of a set $\mathcal{F}$, and two operations $+$ and $\cdot$ over the set $\mathbb{F}$ (resp. $\mathbb{F} \backslash \{0\}$), such that the set and the operation form an abelian group (commutative group)
+  - Another important property holds (**distributivity**) - for $a,b,c \in \mathbb{F}, a * (b + c) = a*b + a*c$
+  - If $\mathbb{F}$ is finite, then the field $\mathbb{F}$ is also finite
+  - **Order**
+    - Order is the number of elements in the field, there exists a finite field of order $q$ iff $q = p^m$ where $p$ is a prime number (aka. the characteristic of $\mathbb{F}$)
+      - If $m = 1$, then $\mathbb{F}$ is a prime field, if $m \geq 2$, then $\mathbb{F}$ is an extension field
+- **Binary Field**
+  - Fields of order $q = 2^m$
+  - Can construct field $\mathbb{F}_{2^m}$ by use of _binary polynomial_ i.e 
+$$p(z) = \Sigma_{0 \leq i \leq m-1} a_i z^i$$
+  - where $a_i \in \mathbb{F}_2$
+  - **Constructing field via polynomial**
+    - Set of polynomials of degree $\leq m - 1$, and coefficients in $\mathbb{F}_{2^m}$,
+    - Multiplication is modulo unique **reduction polynomial** of order $2^m$
+    - Each irreducible polynomial of order $q$ creates a new field that is isomorphic
+- **Extension Fields**
+  - Let $\mathbb{F}_p[z]$ be the set of polynomials with coefficients in $\mathbb{F}_p$, then each finite field $\mathbb{F}_{p^m}$ is isomorphic to the field of polynomials, with multiplication performed over the irreducible polynomial $f(z) \in \mathbb{F}_p[z]$
+- **Subfields**
+  - A subset $k \subseteq K$ of a field $K$ is a _subfield_ of $K$ if $k$ is also a field wrt. $+_K$ and $\cdot_K$
+  - Let $\mathbb{F}_{p^m}$, has a subfield $\mathbb{F}_{p^l}$ for each positive $l, l|m$, let $a \in \mathbb{F}_{p^m}$, and $\mathbb{F}_{p^l} \subseteq \mathbb{F}_{p^m}$, then $a \in \mathbb{F}_{p^l}$ iff, $a^{p^l} = a$ in $\mathbb{F}_{p^m}$
+    - Note the above is determined by the abelian grp structure of $\mathbb{F}_{p^m}$ wrt. $\cdot$
+- **Bases of finite Field**
+  - The finite field $\mathbb{F}_{q^n}[z]$ can be viewed as a vector space over the sub-field $\mathbb{F}_q$ 
+  - Trivial basis $\{1, z, z^2, \cdots , z^{n-1}\}$, let $a \in \mathbb{F}_{p^n}[z]$, then $a = \Sigma_i a_i \cdots z^i$
+- **Multiplicative Group of Finite Field**
+  - Let $\mathbb{F}_q$ be a finite field, then $\mathbb{F}_q^*$ is a cyclic group, $(\mathbb{F}_q\backslash \{0\}, \cdot)$,
+    - Let $b \in \mathbb{F}_q^*$, then $b$ is a generator iff $\mathbb{F}_q^* = \{b^i : 0\leq i \leq q-2\}$
+- **Prime Field Arithmetic** (implementation)
+  - Represent prime field $\mathbb{F}_p$, let $W$ be the word-length (generally 64-bit)
+  - Let $m = \lceil log_2(p) \rceil$, i.e the bit-length of $p$ and $t = \lceil \frac{m}{W} \rceil$ it's word-length
+  - Let $a$ be represented as $A[..]$, then
+    $$a = A[t - 1]2^{(t -1) * W} + \cdots + A[1]2^{W} + A[0] $$
+    - I.e primes reprsented in base $2^W$, and $A[i] \leq 2^W -1$
+    - Represent integer of word-length by `uint` in go
+    - Assignment $(\epsilon, z ) \leftarrow w$, means
+      - $z \leftarrow w \space mod \space 2^W$
+      - $\epsilon \leftarrow !bool(w \in [0, 2^W))$
+    - let $a, b \in [0, 2^{W *t}]$, i.e both integers of word-legth $t$
+    - Then their addition is defined as follows, which returns $(\epsilon, c) \leftarrow a + b$, where $c = C[0] + \cdots + C[t-1]2^{(t - 1) W} + 2^{W * t} \epsilon$
+    1. $(\epsilon, C[0]) \leftarrow A[0] + B[0]$
+    2. For $0 < i \leq t -1$
+       - $(\epsilon, C[i]) \leftarrow A[i] + B[i] + \epsilon$
+    3. Return $(\epsilon, c)$
+    - Subtraction is defined analogously, i.e it returns $(\epsilon, c) \leftarrow a - b$, where $c = C[0] + \cdots + C[t-1]2^{(t-1)W} - \epsilon*2^{Wt}$
+    1. $(\epsilon, C[0]) \leftarrow A[0] - B[0]$
+    2. For $0 \leq i \leq t -1$
+       - $(\epsilon, C[i]) \leftarrow A[i] - B[i] - \epsilon$
+    3. Return $(\epsilon, c)$
+- ## Number Theory
+    - Let $n \in \mathbb{Z}_{>0}$, then $\mathbb{Z}_n$ (the integers mod $n$) is a group wrt addition
+    - Let $\mathbb{Z}_n^X = \{a \in \mathbb{Z}: gcd(a, n) = 1\}$, then $1 \in \mathbb{Z}_n^X$, and the set is closed over multiplication
+      - I.e $\mathbb{Z}_n^X = \mathbb{Z}_n$ for prime $n$, and $\mathbb{Z}$ is a field
+    - $\phi(n)$ denotes the set of integers that are relatively prime to $n$, notice, by euler's thm. $a^{p-1} \equiv 1 (p)$, then $o(a) | p - 1$
+    - **primitive root** mod $p$ is an integer $a$ such that $o(a) = p -1$ (i.e $a$ is a generator for $\mathbb{Z}_p^X$)
+      - primitive root always exists, thus $\mathbb{Z}_n^X$ is a cyclic group (always has a generator)
+      - 
+- ## Groups
+  - $(G, +)$, where $G$ is a binary operation
+    - $ 0 \in G$, where $0 + g = g + 0$ (identity)
+    - Existence of additive inverse, i.e $\exists -g \in G, (-g) + g = g + (-g) = 0$
+  - **order** is number of elements in group
+    - $g \in G$, then $o(g) := min (k), mg^k = 0$
+  - Let $H \subset G$ (where $H$ is a subgroup of $G$), then $o(H) | o(G)$ 
+  - **structure theorems**
+    - Let $G_1, G_2$ be groups, they are isomorphic, if there exists $\phi : G_1 \rightarrow G_2$, such that $\phi$ is a bijection, and $\phi(g * h) = \phi(g) * \phi(h)$
+  - **Fields**
+    - Let $K$ be a field, There is a ring homo-morphism $\phi: \mathbb{Z} \rightarrow K$ that sends $1 \in \mathbb{Z} \rightarrow 1 \in K$, if $\phi$ is injective, then $K$ has characteristic 0, otherwise there exists $p$ such that $\phi(p) = 0$, and $p$ is the characteristic of $K$ 
+      - $p$ is prime, as suppose $p = ab$, then $\phi(p) = phi(ab) = \phi(a)\phi(b) = 0$, and either $a$ or $b$ contradicts the minimality of $p$, thus $p$ is prime.
+    - Let $K$ and $L$ be fields, with $K \subseteq L$. If $\alpha \in L$, then $\alpha$ is **algebraic** if there exists $f(x) = \Sigma_i a_i x^i$, there $f(\alpha) = 0$, and $a_0, \cdots, a_n \in K$ 
+    - If every element $k \in L$ is algebraic over $K$, the $L$ is an algebraic extension of $K$
+    - The **algebraic closure** of $K$, $\overline{K}$
+      - $\overline{K}$ is algebraic over $K$
+      - Every non-constant polynomial $f(X)$ with coefficients in $\overline{K}$ has a root in $\overline{K}$ (algebraically closed)
+      - i.e any poly in $\overline{K}$ is factorable
+    - 
+- ## Pairings
+  - Elliptic curves are an abstract type of _group_ defined on top of (over a field)
+    - Use finite-fields in crypto b.c it is easier to represent in a computer
+  - Let $K$ be a field, then $(x ,y) \in E$ (the elliptic curve), where $x, y \in \overline{K}$, which satisfy
+  $$E: t^2 + a_1xy + a_3y = x^3 + a_2x^2 + a_4x + a_6$$
+  - Where $a_1, \cdots, a_6 \in \overline{K}$, there is also one point $\mathcal{O} \in E$ but does not satisfy the Weierstrass equation
+    - _point at infinity_ - needed so that E is a group
+## Restaking
+- # Algebra
+- ## Pre-reqs
+  - Let $a, b \in \mathbb{Z}$, and $d = gcd(a, b)$, $\exist s, t \in \mathbb{Z}, at + sb = d$
+  - If $p | a_1 \cdots a_n$, then $p | a_i$, for some $i$
+  - Suppose $a \equiv b (m)$, then $m | a -b$, congruence is an equivalence relation (symmetric,reflexive, transitive)
+  - If $ax \equiv ay (m)$, and $d = gcd(a, m)$, then $x \equiv y (m/d)$
+    - notice $m = kd, a = ld$, and $cm = a(x - y)$ 
+  - If $a_i$ divide $b$, and $gcd(a_i, a_j) = 1$, then $a_1 \cdots a_r | b$
+  - ### Chinese Remainder Theorem
+    - If $m_1, \cdots, m_n$ are relatively prime in pairs ($gcd(m_i, m_j) = 1$), and $x_j \equiv b_j (m_j)$, then a solution $x \equiv b (m_1 \cdots m_n)$ exists
+  - **euler totient fn** - Defined $\phi(m) = |\{x : \mathbb{Z_m: gcd(x, m) = 1}\}|$, where $a^{\phi(m)} \equiv 1 (m)$
+  - **partial order** - $R \subset S \times S$, where $\forall x_1, x_2, x_3 \in S, (x_i, x_i) \in R$ (reflexive), $(x_1, x_2), (x_2, x_1) \in R \rightarrow x_1 = x_2$ (anti-symmetric), and $(x_1, x_2), (x_2, x_3) \in R \rightarrow (x_1, x_3) \in R$ (transitive), if $\forall x_1, x_2 \in S, (x_1, x_2) \in R \lor (x_2, x_1) \in R$ the ordering is **total**
+  - **well-ordering** - $R \subset S\times S$, where $R$ is a partial order over $S$, and forall $S_1 \subset S$ there is a smallest element $s \in S_1$, where $\forall s' \in S_1, s \leq s'$
+    - **well-ordering principle** - Every set can be well-ordered
+  - **maximum principle** - Let $T \subset S$, where $T$ is a **chain** (totally ordered), then $T \subset M$ (another chain that is maximal)
+  - **Zorn's Lemma** - If $S$ is a partially ordered set st every chain has a maximal element, then $S$ has a maximal element
+  - **transfinite induction** - To prove that $P_i$ holds for all $i \in I$, and $I$ is well-ordered, and the following hold
+    - Prove $P_0$, where $0$ is the smallest element of $I$
+    - If $i > 0$, and $P_j$ holds for all $j < i$, then $P_i$ 
+    
+- ## Groups
+  - **group** - Non-empty set $G$ on which a binary operation $(a, b) \rightarrow ab$ is defined such that
+    1. $a, b \in G \rightarrow ab \in G$
+    2. $a(bc) = (ab)c$
+    3. There exists $1 \in G$, where for all $a \in G, a1 = 1a = a$
+    4. $a \in G \rightarrow a^{-1}\in G \land aa^{-1} = a^{-1}a = 1$
+  - **abelian group** - If binary operation is commutative, i.e $ab = ba$ 
+  - Let $a_1, \cdots, a_n \in G$, then $(a_1 \cdots a_n) = (a_1 \cdots a_j)(a_{j+1} \cdots a_n) = (a_1 \cdots a_j)(a_{j + 1} \cdots a_{k+1})(a_{k+1} \cdots a_n) ...$, proof of associativity can be given using induction?
+    - Induct on $n$, and since each group will be less then $n+1$, construct equivalent groups
+    - Prove associativity with inductive hyp. for $a_1 \cdots a_n$
+  - Identity uniqueness, $1, 1' \in G$, where $a1 = 1a = a = a1' = 1'a$, then $1' = 1'1= 1$, similarly w/ inverse $aa' = a'a = 1 = a''a = aa''$, $a' = a'aa'' = a''$
+  - ### Subgroups
+    - $H \subset G$, and $H$ is a group, then $H$ is a **subgroup** of $G$
+    - Let $A \subset G$, then $\langle A \rangle \subset G$, is the intersection of all subgroups $H, A \subset H \subset G$
+  - ### Group Isomorphism
+    - Let $G, H$, be groups, and $f: G \rightarrow H$, a bijection between them, if $a, b \in G, f(ab)= f(a )f(b)$, and $f$ is an isomorphism, and $G, H$ are isomorphic
+  - ### Cyclic groups
+    - Let $G$ be a group, $a \in G$, then $\langle a \langle \subset G$, is the set $\{a^i \}$, notice, $\langle a \rangle$ is a group, and is abelian $a^m a^n$ (expand + apply associativity)
+    - Thus, $\langle a \rangle \sim \mathbb{Z}_n$  (take $f(b = a ^n) = n$
+    - **If $G = \langle a \rangle$, there is exactly one subgroup $H_d$ for each $d | n$, where $n = O(G)$**, 
+        - Suppose $H \subset G$, fix $h \in H$ where $h$ is the smallest element in $H$, thus for all $h' \in H$, there exists $k \in \mathbb{N}, h^k = h'$ ($H$ is cyclic, so $h = g^r, h' = g^{r'}$), then if $o(h) | o(G)$, let $n = o(h)$, then $h^{n + 1} \in H$, and $h^{n+1} < h$, a contradiction..
+    - For the above group, the following are equivalent
+      1. $o(a^r) = n$
+      2. $r$ and $n$ are relatively prime, i.e $gcd(r, n) = 1$
+      3. $r$ is a unit mod $n$, i.e there exists $s \in \mathbb{Z}_n$, where $rs \equiv 1 (n)$ (group of units is a multiplicative group in $\mathbb{Z}_n$)
+    - The set $U_n \subset \mathbb{Z}_n$ of units in $\mathbb{Z}_n$ is a group under mul.
+      - $o(U_n)= \phi(n)$
+   - $1, 2$ , if $a \in (G = \langle b \rangle)$, and $gcd(a, o(G)) = k$, then, then $a \in \langle b^k\rangle$m which has order $o(G) / k$
+   - Consider $\mathbb{Z}_6$
+     - Subgroups -> each have order dividing 6, then $1, 2, 3, 6$, i.e $\langle 0 \rangle, \langle 1 \rangle (\langle 5\rangle), \langle 2 \rangle (\langle 4 \rangle) \langle 3 \rangle$
+   - $\mathbb{Z} \backslash \{0 \}$ (what does it look like?)
+     - Must be a multiplicative grp. (grp. of units mod $n$) etc.
+   - $a,b \in G$, where $ab = ba$, and $o(\langle a \rangle) = m, o(\langle b \rangle) = n$, then $o(ab) = mn$, and $\langle a \rangle \cap \langle b \rangle = 1_G$
+     - Notice, if $ab^{mn} = 1$, then $o(ab) | mn$, and $ab^n = b, ab^m = a$, thus $o(ab) = mn$
+     - Fix $k \in \langle a \rangle \cap \langle b \rangle$, then $k = b^{l_1} = a^{l_2}$ in which case $k^m = k^n = 1$, thus $o(k) | n \land o(k) | m$, and $o(k) = 1$, thus $k = 1$
+   - Infinite grp. w/ non-trivial finite sub-grp
+     - $\mathbb{Z_n} \subset \mathbb{Z}$ (under addition)
+   - If $G$ is an abelian grp., then $g \in G$, has property $o(g) = lcm(\{o(a): a \in G\})$, notice, for each $a \in G, o(a) | o(G)$, thus $o(g) = o(G)$, i.e $\langle g \rangle = G$
+   - Let $H \subset G, K \subset G$, then $H \cup K$ is not a grp. unless $K \subset H$ (vice. versa).
+    - Suppose $H = \langle h_1, \cdots, h_n \rangle$, $K = \langle k_1, \cdots, k_m \rangle$, for each $k_i$, notice $\forall j, k_i h_j \in H \cup K$, then $h_j \in K$, or $k_i \in H$, in either case $K \subset H$ or $H \subset K$, 
+    - Proof using co-set rules? Notice $O(H) | O(G)$, and $O(K) | O(G)$, 
+   - In an arbitrary grp. let $a$ have finite order $n$, and let $k$ be a positive integer. Show that $o(a^k) = n / (n, k) = [n, k] / k$
+    - Let $o(a^k) = l$, then, $n | lk = c(n, k) l$, notice $(n, c) = 1$, thus $l = n / (n, k)$
+    - To prove $n /(n, k) = [n, k] / k$, notice if $n = c_1 (n, k), k = c_2 (n, k)$, then $(n, k) = 1$, thus, $[n, k] = c_1c_2(n, k)$
+   - Let $n = p_1^{e_1}\cdots p_n^{e_n}$, let $A_i = \{k \in \mathbb{Z_n}: p_i | k\}$, then $|A_i| = \frac{n}{p_i}$, $A_i \cap A_j = \frac{n}{p_ip_j}, \cdots$
+     - notice, if $k \in A_i$, $k = k'p_i$, where $1 \leq k \leq n/p_i$, thus there are $n / p_i$ such integers
+     - If $k \in A_i \cap A_j$, then $k = k' p_ip_j$, where $1 \leq k' \leq \frac{n }{p_ip_j} \cdots$
+    - Show that the number of positive integers $k \leq n$, where $gcd(k, n) = 1$, is $\phi(n) = n(1 - \frac{1}{p_1}) \cdots (1 - \frac{1}{p_n})$
+      - Notice that $\phi(n) = n - \Sigma A_i + \Sigma A_iA_j - \Sigma A_iA_jA_k \cdots$, where $|A_i| = \frac{n}{p_i}, |A_iA_j| = \frac{n}{p_ip_j}, \cdots$
+- ## Cosets, Normal SGs, Homomorphisms
+  - Let $H \subset G$, if $g \in G$
+    - **right coset** - $Hg = \{hg: h \in H\}$
+    - **left coset** - $gH = \{gh : h \in H\}$
+  - If $a, b \in G$, then $Ha = Hb$, iff $ab^{-1} \in H$
+    - Forward - if $Ha = Hb$, then $a = hb, h \in H$, and $h = ab^{-1}$
+    - Reverse, if $ab^{-1} \in H$, then fix $h \in Ha$, i.e $h = h'a$, then $h=h'(ab^{-1})b \in Hb$, if $h \in Hb$, $h = h'b$, then $h'ba^{-1} \in H$, and $hb \in Ha$
+  - Similarly, $aH = bH$ iff $a^{-1}b \in H$
+    - Forward - if $aH = bH$, then $b \in aH$, and $b = ah$, thus $h = a^{-1}b$
+    - Reverse - $a^{-1}b \in H$, then $h \in aH$, then $h = ah'$, set $h'' = b^{-1}ah'$, and $h = bh'' \in bH$, if $h \in bH$, then $h = bh'$, $h'' =a^{-1}bh' \in H$, and $ah'' = h \in aH$
+  - Notice the set of right (or left) cosets partition $G$, under the equivalence relation $a \sim b \iff Ha = Hb$
+    - Notice $G = \bigcup_{a \in G} aH$, where each $|aH| = |H|$
+  - **lagrange's theorem** - $|G| = [G : H]|H|$, where $[G : H]$ is the number of equivalence classes under the above equivalence there are
+  - $|\langle a \rangle | | |G|$
+  - Any group of prime order have 2 sub grps. Itself and $\langle 1 \rangle$
+  - **problems**
+    - Show that $a \sim b \iff ab^{-1} \in H$, 
+      - reflexivity - $a \in G, aa^{-1} = 1 \in H$
+      - symmetric - $a \sim b \rightarrow ab^{-1}\in H \rightarrow ba^{-1} \rightarrow b \sim a$
+      - Transitive - $a \sim b \rightarrow b \sim c \rightarrow ab^{-1}, bc^{-1} \in H \rightarrow ac^{-1} \in H$
+    - ^^ equivalence class $a \sim b \rightarrow ba^{-1} \in H \rightarrow ba^{-1}a = b \in Ha$, i.e $a\sim b \rightarrow b \in Ha$
+    - $aH \rightarrow Ha^{-1}$ is bijective, notice $|\{Ha: a \in G\}| = |\{aH : a \in G\}|$ (must prove map is injective)
+      - Suppose $a,b \in G$, where $f(aH) = f(bH)$, i.e $Ha^{-1} = Hb^{-1}$, then $a^{-1}b \in H$ and $aH = bH$ (map is injective between equicardianl sets, so its bijective)
+    - If $a_1 \in aH$, then $a_1H = aH$ -> triv. by above thm
+  - **Euler's Theorem**
+    - If $a, n \in \mathbb{Z}, (a, n) = 1$, where $n \geq 2$, then $a^{\phi(n)} \equiv 1 (n)$
+        - Consider $\mathbb{Z}_n$, then there are $\phi(n)$ units 
+  - **Fermat's Little Theorem**
+    - If $p$ is prime, and $(a, p) = 1$, then $a^{p -1} \equiv 1 (p)$, (i.e consider a grp. of order $p$), $\phi(p) = p - 1$
+  - Index is multiplicative
+    - If $K \subset H \subset G$, then $[K : G] = [K : H][H : G]$
+    - Notice $|G| = |K|[K : G] = |H|[H : G]$, and $|H| = [K : H]|K|$
+  - $HK = \{hk : h \in H, K \in K\}$
+  - If $H \leq G, K \leq G$, then $HK \leq G$, iff $HK = KH$, where $HK = \langle H \cup K \rangle$
+    - forward - Suppose $HK$ is a group, then $g \in HK$, $g^{-1} = k^{-1}h^{-1} \in HK$, i.e $k^{-1} \in H \rightarrow k \in H$, and $k \in H$, thus $KH \subset HK$, the reverse follows similarly, and $HK = KH$
+    - Reverse 
+      - **Closure** - Suppose $HK = KH$, fix $g, g' \in HK$, then $g = hk, g' = h'k', gg' = hh'kk' \in HK$
+      - **associativity** - Follows directly from associativity in $G$
+      - If $hk \in HK$, then $(hk)^{-1} = k^{-1}h^{-1} = h^{-1}k^{-1} \in HK$ (inverse)
+      - 
+  - What of multiplication of co-sets, i.e $aH \leq G$, $bH \leq G$, then, when is $(aH)(bH) = abH$
+    - If $H \leq G$, and for all $c \in G, cHc^{-1} = H$, i.e $cH = Hc$ iff $(aH)(bH) = abH$
+      - Forward - Suppose $cH = Hc$, then $a, b \in G$, $(aH)(bH) = (Ha)(bH) = (H)(abH) = (abH)$ (associativity)
+      - Reverse - Suppose $(aH)(bH) = abH$, then $(aH)(a^{-1}H) = H$
+  - ## Normal Subgroups
+    - $H \leq G$, the $H$ is normal if
+      - $cHc^{-1} \subset H, \forall c \in G$
+      - $cH = Hc, \forall c \in G$
+    - Thus if $H$ is normal, then $\forall c \in G, cHc^{-1} = H$, then the cosets $G / H$, form a group under $(aH)(bH) = abH$
+  - ## Group Homomorphisms
+    - Let $G, H$ be groups, then $f : G \rightarrow H$, is a homo-morphism if, $f(ab) = f(a)f(b)$
+      - Notice, $f(1) = f(1 * 1) = f(1)f(1)$ (cancellation follows to get $f(1) = 1_H$)
+      - $f(a^{-1}) = f(a)^{-1}$, i.e $f(1) = 1_H = f(a)f(a^{-1})$
+    - **kernel** - The kernel (null-space) of $f$ is defined as $a \in G, f(a) = 1_H$, then $ker(f)$ is a normal sub-grp of $G$
+        - notice $a, b \in ker(f), then f(ab) = f(a)f(b) = 1_H$, and $ab \in ker(f)$
+        - let $H = ker(f)$, fix $c \in G$, then $h \in cHc, f(h) = f(a)1_Hf(a)^{-1} = 1_H$, thus $cHc^{-1} \subseteq H$
+    - **natural map** - Let $f : G \rightarrow G / N$, be the map where $a \in G, f(a) = aN$, then for $a \in N, f(a) = aN = N$, i.e $ker(f) = N$
+      - Notice $f$ is a homo-morphism, $f(ab) = abN = (aN)(bN)$ ($N$ is normal)
+    - $f$ is injective, iff the kernal,  $N$ is trivial, i.e $\{1\}$
+      - Forward - Suppose that $f$ is injective, then for $g \in N$, $f(g) = 1_H$, naturally, $g = 1 \in N$
+      - Suppose that the kernel of $f$, $N$ is trivial, then for $g, h \in G, f(g) = f(h), g - h \in N$, and $g - h = 0$, thus $h = g$
+    - $f : G \rightarrow H$ is a homomorphism
+      - Suppose $K \leq G$, then $f(K) \leq H$, fix $f(g), f(h) \in f(K)$, then $f(gh) \in H$ (closure)
+        - associativity holds, identity holds, etc.
+      - If $f$ is an epi-morphism, and $K$ is normal, then $f(K)$ is also normal
+        - Suppose that $K \leq G$ is normal, and $f$ is an epi-morphism, that is for all $h \in H, \exists g \in G, f(g) = h$, consider $h \in H$, then $hf(K)h^{-1} = f(g)f(K)f(g)^{-1} = f(gKg^{-1}) \subset f(K)$, and $f(K)$ is normal
+      - If $K \leq H$, then $f^{-1}(K) \leq G$, if $K$ is normal so is $f^{-1}(K)$
+        - Suppose $K \leq H$, fix $a, b \in f^{-1}(K)$, then $f(a)f(b) = f(ab) \in f(K)$, and $ab \in f^{-1}(K)$, (identity -> triv), associative triv, fix $a = f(g) \in K, a^{-1} = f(g^{-1}) \in f(K)$ ($f^{-1}(K)$) is a grp.
+        - If $K$ is normal, then for all $c \in H, cKc^{-1} \subset K$, i.e $g \in cKc^{-1}, g = ckc^{-1}$, in which
+  - **problems**
+    - Suppose $aH$ is a left-coset of $G$, and $a_1 \in H$, then $a^{-1}a_1 \in H$
+      - $a \in H, a^{-1} \in H \rightarrow a^{-1}a_1 \in H$, thus $aH = a_1H$
+    - If $[G : H] = 2$, then $H$ is normal
+      - Let $g \in G/N$, then $g^{-1} = g$, thus $gH = (gH)^{-1}$, in other, words $gH = Hg^{-1} = Hg$, and $H$ is normal
+    - Let $f : \mathbb{Z} \rightarrow \mathbb{Z}$ is an endo-morphism, show that $f$ is determined by it's action on $1
+      - Notice, $\mathbb{Z} = \langle 1 \rangle$, thus for $h \in \mathbb{Z}, h = 1 + 1 + \cdots + 1$, and $f(h) = hf(1)$
+    - If $f$ is an automorphism of $\mathbb{Z}$, show that $f$ is either $I$ or $-I$
+      - Notice, since $f$ is an isomorphism, $f = k\mathbb{Z}$ for some $k \in \mathbb{Z}$, suppose $|k| \not = 1$, then, for $k -1 \in \mathbb{Z}$, $k -1 \not \in f(\mathbb{Z})$ (a contradiction), thus $|k| = 1$, and $f = I \lor -I$
+    - Grp. of AMs of $\mathbb{Z}$ is a grp. of order $2$
+    - $H, K \leq G$, then for $x, y \in G$, $x \sim y$ iff $x = hyk, h \in H, k \in K$, so that $\sim$ is an equiv.
+      - Reflexivity - $x \in G$, $1_Hx1_K = x$, this $x \sim x$
+      - Symmetricity - $x \sim y$, then $x = hyk, h \in H, k \in K$, then $y = h^{-1}xk^{-1}$
+      - Transitivity - $x \sim y, y \sim z$, then $x = hyk$, $y = h'zk'$, then $x = hh'zk'k$, thus $x \sim z$
+    - ^^ above equivalence class partitions $G$, i.e $HxK = \{hxk : h \in H, k \in K\}$ (equivalence class of $x$), show that any double-coset can be written as a union of right cosets of $H$, or a union of left cosets of $K$
+      - 1. fix $x \in G$, then $HxK = \cup_{k \in K} Hxk$
+      - 2. triv same as above
+- ## Isomorphism Theorems
+  - Suppose $N$ is a normal subgrp. of $N$, let $f : G \rightarrow H$, and $\pi : G \rightarrow G/N$
+    
+    ![Alt text](Screen%20Shot%202023-04-29%20at%208.37.51%20PM.png)
+  - Want to find $\overline{f} : G/N \rightarrow H$, where $f(aN) = a$
+    - This makes diagram **commutative**
+  - Then set, $\overline{f} = f, for k \not \in K$, and for $k \in K, \overline{f} = 0$
+  - **factor theorem**
+    - A HM $f$, where $ker(f) = K \supset N$, can be **factored** through $N$, i.e there is a unique homo-morphism $\overline{f} : G/N \rightarrow H$, such that for $\overline{f} \circ \pi = f$
+      - $\overline{F}$ is an epi-morphism iff $f$ is an epi-morphism
+      - $\overline{f}$ is a mono-morphism iff $K = N$
+      - $\overline{f}$ is an isomorphism iff $f$ is an epi-morphism and $K = N$
+    - Proof
+      - Existence - Set $\overline{f}(aN) = f(a)$
+        - For $aN, bN \in G/N$, notice, $\overline{f}(aNbN) = f(abN) = f(ab) = f(a)f(b) = \overline{f}(aN)\overline{f}(bN)$
+        - $aN = bN$, then $a^{-1}b \in N$, and $f(a^{-1}b) = 1, f(a) = f(b)$
+      - $\overline{f}$ is an epi-morphism iff $f$ is an epi-morphism
+        - **epimorphism $\iff$ surjective + homomorphism**
+        - Follows directly.. 
+      - $\overline{f}$ is a monomorphism iff $N = K$
+        - Forward - Suppose $\overline{f}$ is a mono-morphism, in which case $ker(\overline{f}) = 1N$, and for $k \in K$, consider $\overline{f}(kN) = f(k) = 0$, as such, $kN = K$, and $k \in K$, thus $N \subset K$
+        - Reverse - Suppose $N = K$, and $f(aN) = f(bN)$, then $\overline{f}(ab^{-1}N) = 1$, thus $ab^{-1} \in N$, and $a \sim b$, thus $aN = bN$
+      - $\overline{f}$ is an isomorphism iff $f$ is an EM and $K = M$
+      - Reverse - Triv, i.e $\overline{f}$ is EM, and $\overline{f}$ is monomorphism=
+      - Forward - Suppose $\overline{f}$ is isomorphism, then $\overline{f}$ is EM + MM
+  - ## First Isomorphism Theorem
+    - If $f: G \rightarrow H$ is a homomorphism with kernel $K$, then the image of $f$ is isomorphic to $G/K$
+      - I.e consider $\overline{f} :  G/K \rightarrow im(f)$, notice $\overline{f}$ is a MM by above, and for $h \in im(f)$, $f(g) = h$, then $\overline{f}(fK) = h$ ($\overline{f}$) is an epi-morphism
+  - Let $H, N \leq G$, where $N \leq G$ is normal
+    - $HN = NH$, thus $HN \leq G$
+        - Notice $N$ is normal, thus for $l \in HN, l = hN, h \in H$, as such $l \in NH$, thus $HN \subseteq NH$.. 
+    - $N \leq HN$ is normal in $H$
+      - Fix $h \in HN\backslash N$, notice $h \in G$, thus $gN = Ng$, thus $N$ is normal
+    - $H \cap N \leq H$ is normal
+      - Notice, fix $a, b \in H \cap N$, then $ab \in H \land \in N$, thus $ab \in H \cap N$
+      - Consider $f : G \rightarrow G/N$, then consider $f : H \rightarrow G/N$, then $ker(f) = H \cap N$
+        - Kernel of HM is a normal grp.
+        
+        ![Alt text](Screen%20Shot%202023-04-30%20at%2012.24.38%20AM.png)
+  - ## Second Isomorphism Theorem
+    - If $H, N \leq G$, where $N$ is normal, $H/(H \cap N) \cong HN/N$
+      - Consider $\pi : G \rightarrow G/N$, then consider $\pi' = \pi|_H : H \rightarrow HN / N$, then $ker(\pi') = H \cap N$, thus (by factor thm), $\pi'' : H / (H \cap N) \rightarrow HN/N$ 
+  - ## Third Isomorphism Theorem
+    - If $N, H \leq G$, where $H, N$ are normal, and $N \leq H \leq G$, then $G/H \cong (G/N)/(H/N)$
+      - WTF - $f: G/N \rightarrow G/H$ where $ker(f) = H/N$, and $im(f) = H/N$ (i.e epi-morphism) w/ kernel $H/N$
+        - $H/N \leq G/N$ (is it normal)? Yes, consider $hN \in H/N, gN \in g/N$, then $hNgN = gNhN$, i.e $gN/N = H/Ng$ ($H/N$ is normal)
+      - Natural iso-morphism follows, i.e $gN \in G/N, g(gN) = gH$, thus for $hN \in H/N, f(hN) = f(h)f(N) \in H$, (epi-morphism?)
+        - Yes, thus $(G/N)/(H/N) \cong G/H$
+  - Consider $N \leq H \leq G$, where $N$ is normal, then consider the map $\psi(H) : 2^G \rightarrow 2^{G/N}$, where $\psi(H) = H/N$,
+    - Notice, $\psi$ is a bijection, i.e for $H/N \subset G/N$, $\psi(H) = H/N$ EM
+    - For MM, suppose $H_1, H_2 \leq G$, and $\psi(H_1) = \psi(H_2), H_1/N = H_2/N$, thus $\forall h_1 \in H, \exists, h_2 \in H_2, h_1N = h_2N$, and $h_2^{-1}h_1 \in N \subset H_2$, and $h_2\cdot h_2^{-1}h_1 = h_1 \in H_2$, and $H_1 \subseteq H_2$ (reverse follows easily), thus $H_2 = H_1$
+  - ## Correspondence Theorem
+    - Suppose $N \leq G$ ($N$ is normal), then $\psi : H \rightarrow H/N$ is a OTO correspondence between subgrps. of $H \leq G$, where $N \leq G$
+      - The inverse $\psi^{-1} = \tau : Q \rightarrow \pi^{-1}(Q)$, where $\pi : G \rightarrow G/N$
+      - $H_1 \leq H_2$ iff $H_1 / N \leq H_2/N$  and $[H_2 : H_1] = [H_2/N : H_1/N]$
+      - $H$ is a normal subgrp. of $G$ iff $H/N$ is a normal subgrp. of $G/N$
+        - $H_1$ is a normal subgrp. of $H_2$ iff $H_1/N$ is a NSG of $H_2/N$, and BY 3IT $H_2/H_1 \cong (H_2/N)/(H_1/N)$
+    - Proof (ii)
+      - See above proof for bijection, for inverse $\psi^{-1}$, consider $\psi^{-1}(H/N) = \{a \in G: \pi(a) = aN, aN \in H/N\}$ ($\pi$ is an isomorphism)
+      - Forward - Suppose $H_1 \leq H_2$, $\psi(H_1) \subset \psi(H_2)$
+      - Reverse - Suppose $H_1/N \leq H_2/N$ $\psi^{-1}$ is a bijection
+      - $[H_2 : H_1] = [H_2/N : H_1/N]$
+        - Suppose $a, b \in H_2$, and $a \sim b$ ($a^{-1}b \in H_1$), then for $aN, bN \in H_2/N$, $a^{-1}bN \in H_1/N$, and $aN \sim bN$, thus $[H_2 : H_1] = [H_2/N : H_1/N]$
+    - Proof (iii)
+      - Forward - $H \leq G$ is NSG of $G$, consider $g \in G$, notice $(gN)(H/N)(gN)^{-1} = (gHg^{-1})/N = H/N$, and $H/m \leq G/N$ is normal
+      - Reverse - Suppose $H/N \leq G/N$ is normal
+  - **problems**
+    - Consider $n\mathbb{Z} \leq \mathbb{Z}$, show that $\mathbb{Z}/n\mathbb{Z} \cong \mathbb{Z}_n$
+      - for $kn\mathbb{Z} \in \mathbb{Z}/n\mathbb{Z}$, fix $\phi(kn\mathbb{Z}) = k (n)$, MM if $\phi(kn\mathbb{Z}) = \phi(k'n\mathbb{Z})$, then $k = k' + mn (n) = k'$, and $k = k'$, surjectivity, for $k \in \mathbb{Z}_n$, take $\phi(k\mathbb{Z}) = k$, and $\phi$ is surjective
+    - If $m | n$, then $\mathbb{Z}_m \leq \mathbb{Z}_n$, show that $\mathbb{Z}_n / \mathbb{Z}_m \cong \mathbb{Z}_{n/m}$
+      - Suppose $m | n$, then there is a sub-grp of $\mathbb{Z}_n$, i.e $\langle 1^m \rangle$ of order $n/m$, and $\langle 1^{n/m} \rangle$ of order $m$ (thus $\mathbb{Z}_{n/m} \cong \mathbb{Z}_m$), thus $n/m = [\mathbb{Z}_n : \langle 1^{n/m} \rangle]$, and $\mathbb{Z} / \langle 1^{n/m} \rangle \cong \mathbb{Z}_{n/m}$, and $\langle 1^{n/m} \rangle \cong \mathbb{Z}_m$
+    - Let $a \in G$, and $f_a : G \rightarrow G$ represents _conjugation_ by $a$, i.e $f(x) = axa^{-1}$
+      - MM, fix $x, y \in G$, then $f(x) = f(y) \rightarrow axa^{-1} = aya^{-1} \rightarrow x = y$
+      - EM, fix $g \in G$, then $f(aga^{-1}) = g$
+      - $f_a$ is defined as an **inner AM**  
+    - Denote $Z(G)$ (**the center**) of $G$, where $x \in G \iff \forall y \in G xy = yx$, then $Z(G)$ is normal, and $G/Z(G) \cong$ The grp. of inner AMs of $G$
+      - Denote $H$ the set of all $f_a(x) = axa^{-1}$ under comp, $f, g \in G, fg = f(g(x)) = baxa^{-1}b^{-1}$
+        - inverse, i.e  $f^{-1} = f_{a^{-1}}$
+      - WTS: $\phi : G \rightarrow H$, where $ker(\phi) = Z(G)$, i.e $1_H = f_1$, $im(f) = H$, notice the map $\phi(z) = f_z$ satisfies criteria, i.e $z \in Z(G), \phi(z) = f_z, \forall x \in G, f_z(x) = zxz^{-1} = xzz^{-1} = x$, and $f_1 = f_z$
+        - Apply FIT
+    - If $f$ is an AM of $\mathbb{Z}_n$, show that $f$ is multiplication by $m$ where $(m,n) = 1$
+      - Suppose $f$ automorphism of $\mathbb{Z}_n$, notice, $\langle 1 \rangle = \mathbb{Z}_n$, then $f(1) = k$, suppose $(k, n) = d$, $n = cd$, and for $l \in \mathbb{Z}_n, l = 1^{n/d}, f(l) = kl = 1^{c'd}1^{n/d} = 0$, thus $d = 1$
+    - Let $H, N \leq G$, show that $HN$ is the smallest grp. where $H \leq HN, N \leq HN$
+    - Let $g$ be an AM of $G$, and $f_a$ an IAM, then $g \circ f_a \circ g^{-1}$ is an IA, and the grp. of IAMs is a normal sub grp. of the AMs of $G$
+    - Identify a large class of grps. for which the only **IM** is the identity mapping
+      - Abelian grps.
+- ## Direct Products
+  - Consider groups $H, K$,  let $G = H \times K$, where the group operations are defined component wise, i.e $(h_1, k_1), (h_2, k_2) \in H \times K$, then $(h_1h_2, k_1k_2) \in H \times K$
+    - Above grp. is denoted **external direct product** of $H, K$
+  - Consider $H \cong \overline{H} = \{(h, 1_k) : h \in H\}$, notice $\overline{H}, \overline{K}$ are normal sub-grps, of $H \times K$
+  - If $G = HK$, and $H \cap K = \{1\}$, then $G$ is the internal direct product of $H, K$, i.e $HK \cong H \times K$
+    - If $G$ is the internal direct product of $HK$, then $G \cong H \times K$
+      - i.e consider $g \in G = HK, g = hk$, $\phi : G \rightarrow H \times K$, then $\phi(g) = (h,k)$, naturally $\phi$ is a mono-morphism, then fix $(h, k) \in H \times K$, then $h = hk$ is the pre-image, and $\phi$ is an EM
+  - Consider $H_1, \cdots, H_n$, then the EDP of $H_i$, $\Pi_i H_i$ is the analogous grp. defined above
+    - The analogous normal subgrps of the EDP are also defined as above
+  - Fix $g \in G$, where $g = h_1 \cdots h_n, h_i \in H_i$, where $(h_i)$ are unique, i.e $\bigcap_i H_i = 1$
+    - and $H_i$ are normal, then $G$ is the IDP of the grps. i.e $G = H_1\cdots H_n$
+  - Suppose $G = H_1\cdots H_n$, where $H_i$ is normal. The following are equiv.
+    - $G$ is the IDP of $H_i$
+    - $H_i \bigcap \Pi_{j\not=i}H_j = \{1\}$
+    - $H_i \bigcap_{j = 1}^{i - 1} H_j = \{1\}$
+- # Rings
+  - Let $R$ be a **ring**
+    - Abelian grp. under $+$
+    - and **associative** + **distributive** multiplication $(a, b) \rightarrow ab$, where $a(bc) = (ab)c$, and $a(b + c) = ab + ac$
+    - $R$ has
+      - $1_R$ - a multiplicative identity
+      - $0_R$ - an additive identity
+  - Suppose $a, b, c \in R$, then
+    - $a0 = a(0 + 0) = a0 + a0 \rightarrow a0 = 0$
+    - $(-a)b = (0 - a)b = 0 - ab = -(ab)$
+    - $(-1)(-1)$ (apply above w/ $a = 1, b = -1$)
+  - Suppose $a, b \in R \backslash \{0\}$, but $ab = 0$ then $a,b$ are **zero-divisors**
+  - If $a \in R$, where there exists $b \in R$, s.t $ab = ba = 1$, then $a$ is a **unit** or is **invertible** in $R$
+  - If $\forall a,b \in R, ab = ba$, then $R$ is a **commutative** ring
+  - **Integral Domain** - Commutative Ring w/ no zero-divisors
+  - **Division Ring** - non-zero elements form grp. under mult. i.e $a\in R \backslash \{0\}$, $\exists b \in R \backslash \{ 0\}, ab = 1$
+  - **field** - Commutative division ring
+  - Any FID is a field
+    - Let $R$ be an FID, then fix $f : R \rightarrow R$, where $f(x) = ax$, notice, if $ax = bx \rightarrow (a - b)x = 0$, thus $a - b = 0$, and $FID$ is injective, i.e $\forall a \in R \backslash \{0\}$, the map is injective, thus $\exists b \in R \backslash \{0\}, ab = 1$...
+  - The **characteristic** of a ring $R$
+    - The smallest number $n$, where $1 + \cdots (n-times) + 1 = 0$
+    - If this DNE, then the characteristic of $R$ is 0
+  - If $R$ is an integral domain, and $char(R) \not= 0$,  then char(R)$ must be a prime number
+    - Let $char(R) = n = ab \in R$, then $ab = 0$, and are zero-divisors a contradiction
+  - **sub-ring** - $R' \subset R$ is a sub-ring if $R'$ itself is a ring, i.e $0_R, 1_R \in R'$
+  - **examples**
+    - $\mathbb{Z}$ - is a ring + an ID (i.e no zero-divisors)
+    - $\mathbb{Z}_n$ - is a ring, if $n$ is prime it is a **FID**, otherwise, it is not an ID
+    - $M_n(R), n \geq 2$ - the set of $n \times n$ matrices is a ring, it is not a division ring under composition (matrix-multiplication), and has zero-divisors, i.e $T : V \rightarrow V$, where $T(c) = w$, and $S(v) = v - w$
+    - **Quaternions**
+      - Define $H$ a vector space over $\mathbb{Z}$, with basis vectors $1, i, j, k$, and multiplication
+        - $i^2 = j^2 = k^2 = -1$, $ij = k, jk = i, ki = j$, $ji = -ij$, $kj = -jk$, $ik = -ki$
+      - Quaternions are division ring
+    - $R$ is a ring, $R[X]$ set of all poly. in $X$, is a ring
+  - $R[X_1 \cdots X_n]$ is defined as the set of polynomials in $R$ over variables $X_1, \cdots, X_n \in R$, notice, $A[X] = \Sigma_k a_k x^k, B[X] = \Sigma_k b_k x^k$, then $A[X] \cdot B[X] = \Sigma_k \Sigma_{0 \leq i \leq k} a_i b_{k - 1} x^k$
+  - Define $R[[X]]$ as the set of formal power series, i.e where $\Sigma f(n) x^n$
+  - If $R$ is an integral domain, then $R[X]$ is also an integral domain. Fix $A, B \in R[X] \backslash \{0\}$, consider $a_j \not = 0$ the smallest such coeff. in $A$, and analogously $b_i$, notice then $ab_{j + i} \geq a_jb_i \not = 0$
+  - **problems**
+    - If $R$ is a field, is $R[X]$ a field?
+        - Notice, for $f, g \in R[X]$, if $fg = 1$, then $deg(fg) = deg(f) + deg(g) = 0$, and $deg(f) = deg(g) = 0$, thus $f, g$ are both the identity
+        - Notice, if $f \in R[X]$, $f(X) = a_0 + a_i x^i$, $
+    - If $R$ is a field, what are the units of $R[X]$
+      - $f \in R[X], f(X) = a \in R$ (invertible)
+    - Let $\mathbb{Z}[i]$ be the ring of _Guassian integers_, $a + bi$ where $a, b \in \mathbb{Z}$, show that $\mathbb{Z}[i]$ is an integral domain and not a field
+      - ID - Fix $z, z' \in \mathbb{Z}[i]$, where $z = a + bi, z' = a' + b'i$, then $zz' = aa' - bb' + (ab' + ba')i$, then once can sole $aa' = bb', ab' = - b'a$ to obtain that $a = 0, b = 0$, thus $z = 0$, and $\mathbb{Z}[i]$ is an integral domain
+        - Easier proof using norm, i.e $z, z' \in \mathbb{Z}[i]$, where $z, z' \not = 0, |z| > 0, |z'| > 0 \in \mathbb{Z}$, i.e norm $|z| = a^2 + b^2 \in \mathbb{Z}$, thus for $zz' = 0, |z||z'| = 0$, and either $|z| = 0, |z'| = 0$ (contradiction)
+    - $\mathbb{Z}[i]$ is not a field
+      - Similar logic - If $z \in \mathbb{Z}[i]$, then $1 = |zz^{-1}| = |z||z^{-1}|$, but $z \in \mathbb{Z}$ is not guaranteed to exist..
+    - Units, $z \in \mathbb{Z}, |z| | 1$ (i.e norm is a unit of $\mathbb{Z}$)
+    - Set of Endomorphisms of $G$, $End(G)$ is a ring
+      - I.e fix $f, g \in End(G)$, then $f + g \in End(G)$, i.e $End(G)$ is abelian under addition (if $G$ is as well), for multiplication, consider $f_1 \in End(G), f_1(x) = x$ (identity mapping), then $f \circ(g_1 + g_2) (x) = f(g_1(x) + g_2(x)) = f(g_1(x)) + f(g_2(x))$ distributes
+    - What are units of $End(G)$ (functions for which $f^{-1}$ exists), i.e injective (thus bijective) mappings, otherwise $f(x_1) = f(x_2) = x$, and $f^{-1}(x ) = x_1 = x_2$? 
+- ## Ideals, Homomorphisms, and Quotient Rings 
+    - Let $f : R \rightarrow S$, where $R, S$ are rings, and $f$ is homo-morphic over the abelian grps $(R, +), (S, +)$
+      - What abt. $a, b \in R, f(ab) = f(a)f(b)$?
+      - What abt. $f(1_R) = 1_S$, notice $f(1_R) = f(1_R)f(1_R)$ (however, $f(1_R)$ may not be a unit, thus cannot cancel..)
+    - **ring homomorphism** - Map $f : R \rightarrow S$, where $a, b \in R, f(ab) = f(a)f(b), f(a + b) = f(a) + f(b), f(1_R) = 1_S$
+      - To prove similar **isomorphism theorems** for rings (notice grps -> normal subgrps, rings -> ideals)
+    - **Ideal**
+      - Let $I \subset R$, where
+        - $I \leq R$, under $+$
+      - If $a \in I$, then $ra \in I$, i.e $rI \subset I, \forall r \in R$ (left ideal)
+      - If $a\in I$, then $ar \in I$, i.e $Ir \subset I, \forall r \in R$ (right ideal)
+    - Consider $ker(f)$, notice if $a, b \in ker(f), then f(a + b) = f(a) + f(b) = 0 +0 = 0$, $r \in R, f(ar) = f(a)f(r) = 0 * f(r) = 0$, (right ideal)
+      - Two sided ideal comes naturally, and $ker(f)$ is a two-sided ideal
+      - If $ker(f) = R$, then $f(1_R) = 0_S$ (contradiction)
+    - ### Quotient Rings
+      - Let $I \subset R$, $I$ is an ideal, notice $(I, +) \leq (R, +)$, and $R/I$ is the set of cosets of $I$ in $R$
+      - Suppose $r + I, s + I \in R/I$, then $(r + I)(s + I) = rs + rI + sI + I = rs + I$, 
+        - Notice, if $r \sim r', s \sim s'$, i.e $r' - r, s' - s \in I$, then let $a = r' - r, b = s' - s \in I$, then $r's' = (r + a)(s + b) = rs + I$, and $r's' \in rs + I$, thus $r's' \sim rs$
+      - Thus cosets of $I$ in $R$ form a ring, $R/I$ (the quotient ring)
+        - Identity under mult/ $1_R + I \in R/I$, where $(r + I)(1_R + I) = r + I$
+        - Identity under addition. $0_R + I = I \in R/I$ 
+      - Every proper ideal $I$ is the kernel of a ring HM
+        - Let $I \subset R$ be an ideal, consider $f : R \rightarrow R/I$, where $r \in R, $f(r) = r + I \in R/I$, naturally, $r \in I, f(r) = I = 0_{R/I}$, fix $ab \in R, f(ab) = ab + I = (a + I)(b + I) = f(a )f(b)$
+      - Suppose $f : R \rightarrow S$, where the only ideals of $R$, are $R, \{0_R\}$, then $f$ is injective
+        - For any division ring $R$, the hyp. is satisfied
+          - Let $r \in I$, then $r^{-1} \in R, r^{-1}r = 1_r \in I$, and $I = R$
+        - Notice $ker(f) = I \subset R$, is an ideal, thus if $ker(f) = R$, $f(1_R) = 0_S$ (a contradiction), thus $ker(f) = \{0\}$, and $f$ is injective
+      - Let $X \subset R$, then $\langle X \rangle$ is the two-sided ideal generated by $R$, i.e $\langle X \rangle = RXR$
+      - **principal ideal** - Ideal generated by single element $I \subset R$, $I = \langle r \rangle, r \in R$
+      - Addition of ideals, $I, J \subset R, I + J = \{i + j, i,j \in R\}$
+        - fix $a, b \in I + J, a = i + j, b = i' + j', a + b = i + i' \in I + j + j' \in J, a + b \in I + J$, inverse $a = i + j, -a = -i -j$
+        - $a = i + j \in I + J, r \in R, ra = ri + rj \in I + J$
+    - **problems**
+      - What are ideals in $\mathbb{Z}$, notice $\mathbb{Z}$ is a PID, thus $I \subset \mathbb{Z}$, $I = k\mathbb{Z} = \langle k \rangle$
+      - $M_n(R)$ ring of $n \times n$ matrices over $R$, let $C_k \subset M_n(R)$ be the subset of $M_n(R)$ of zero-matrices except for column $k$, similarly for $R_k$ (rows), show that $C_k, R_k$ are left (resp. right) ideals
+        - Notice $C_k$ is an abelian grp. under matrix addition, consider $c \in C_k, m \in M_n(R)$, notice $ab_{i,j} = \Sigma_{1 \leq k \leq n} a_{i, k}b_{k, j}$, thus $a_{i, k} \not = 0$, where $i = k$, and $ab_{c,d} = 0, c \not= k$
+        - Similar case follows for $R_k$ (notice, $b_{kl}$ comes from left-side matrix)
+      - In $R[X]$, express the set $I$ if poly. with no constant term i.e $a_i = 0$, show that $I$ is a principal ideal, 
+        - Notice, $I = \langle x \rangle$, fix $f \in I, f = a_1x + a_2x^2 + \cdots$, then fix $p (x) \in R[X], p = a_1 + a_2x + \cdots, xp(x) = f$
+      - Let $R$ be a commutative ring whose only proper ideals are $\{0\}$, and $R$, show $R$ is a field
+        - fix $a \in R$, consider $\langle a \rangle = R$, then $1 \in \langle a \rangle$, thus $\exists b \in R, ba = ab = 1$, and $R$ is a field
+      - Let $R = \mathbb{Z}_n$, where $n$ is prime or composite, show that every ideal of $R$ is principal
+        - fix $I \subset R$, where $i = (a_1, \cdots a_n)$, then consider $b = gcd(a_1, \cdots, a_n)$, thus for $a \in I, \exists c \in R cb = a$, and $I = \langle a \rangle$
+- ## Isomorphism Thm.s for rings
+  - WTS similar factor thms for rings as for grps. ie $f : R \rightarrow S$, $\pi : R \rightarrow R/I$, $I = ker(f)$
+  - Any ring HM, $f$ can be factored through ideal $I \subset ker(f)$,
+    - $\overline{f} : R/I \rightarrow S$ is EM iff $f$ is EM
+    - $\overline{f}$ is MM iff $ker(f) = I$
+  - Proof
+    - Suppose $f : R \rightarrow S$ ($f$ is HM), where $I \subset ker(f)$, and $\pi : R \rightarrow R/I$, and $\overline{f} : R / I \rightarrow S$, where $\overline{f}(r + I) = f(r)$
+      - **Prove that $\overline{f}$ is well defined** - Fix $a \sim b$, then $a - b \in I$, and $f(a - b) = f(a) - f(b) = 0$, thus $f(a) = f(b), f(a + I) = f(a) = f(b) = f(b + I)$
+      - $\overline{f}$ is HM, fix $(a + I), (b + I) \in R/I, f((a + I) + (b + I)) = f(a + b + I) = f(a + b ) = f(a) + f(b) = f(a + I) + f(b + I)$, $f((a + I)(b + I)) = f(ab) = f(a)f(b) = f(a + I)f(b + I)$...
+      - Forward - Suppose $\overline{f}$ is EM, fix $s \in S$, then $\overline{f}(a + I) = s = f(a)$, thus $a \in R$ is PM of $s$, and $f$ is EM
+      - Reverse - Suppose $f$ is EM, then for $s \in S, \exists a \in R, f(a) = s$, and $f(a + I) = s, a + I \in R/I$, and $\overline{f}$ is EM
+      - Reverse - Suppose $ker(f) = I$, then if $\overline{f}(a + I) = \overline{f}(b + I)$, then $f(a) = f(b)$, and $a -b \in I$, thus $a\sim b \rightarrow a + I = b + I$
+      - Forward - Suppose $\overline{f}$ is MM, WTS $ker(f) \subset I$, fix $x \in ker(f)$, then $f(x) =0$, and $\overline{f}(x + I) = 0 = f(0_R + I)$, thus $x \in I$
+  - ### First ITM For Rings
+    - If $f : R \rightarrow S$ is a RHM, where $ker(f) = K$, then $im(f) \cong R/K$
+      - $f$ is EM onto $im(f)$, and consider factor thm. with $f : R \rightarrow im(f)$, with $I = R/ker(f)$, then $f : R/K \rightarrow im(f)$ is IM, thus $R/K \cong im(f)$
+    - 
+  - ### Second ITM For Rings
+    - Let $I \subset R$ be an ideal of $R$, and $S \subset R$, a sub-ring, then
+      - $S + I = \{x + y: x \in S, y \in I\}$ is a sub-ring of $R$
+      - $I$ is an ideal of $S + I$
+      - $S \cap I \subset S$ is an ideal
+      - $(S + I)/I \cong S/(S \cap I)$
+        
+        ![Alt text](Screen%20Shot%202023-05-03%20at%2012.09.01%20AM.png)
+    - Proofs
+      - Notice, $0_R, 1_R \in S + I$ (naturally grp. is closed under addition ), wb mult $x + y, x' + y' \in S + I$, then $(x + y)(x' + y') = xx' + xy' + yx' + yy'$, where $xx' \in S, xy' + yx' + yy' \in I$ ($I$ is two-sided )
+      - $I \subset S + I$ is ideal.. triv. 
+      - $S \cap I \subset S$ is ideal
+        - Fix $a, b \in S \cap I$, then $a + b \in S \cap a + b \in I$.. triv.
+      -  Consider $\pi : S + I \rightarrow S$, where $\pi(a) = 0 \iff a \in I$, then $(S + I)/ker(\pi) = (S + I)/I \cong im(\pi) \cong S /(S \cap U)$
+  - ### Third ITM For Rings
+    - Let $I, J \subset R$, where $I \subset J$, then $J / I$ is an ideal of $R / I$ and $R/J \cong (R/I)/(J/I)$
+      - Notice $J / I \subset R / I$ is an ideal .. follows naturally
+    - Consider the map $\pi : R / I \rightarrow R / J$, where $\pi(a + I) = a + J$, as such $ker(\pi) = J / I \subset R/I$
+      - For EM, fix $a + J \in R / J$, $a + I \in R / I$, $\pi(a + I) = a + J$
+    - $\pi$ is well defined?
+      - Suppose $a + I, b + I \in R/I$, where $a + I = b + I$, thus $a - b \in I$, then $\pi(a + I) = \pi (b + b - a + I) = \pi(b + I)$
+  - ### Corresponence Thm. for Rings
+    - $I \subset R$ is an ideal, then $S \rightarrow S / I$ is a OTO correspondence between all subrings of $R$, a subset of $2^R$ containing $I$, and the set of all sub-rings of $R/I$. Analogously the set, $\{J \subset R: I \subset J\}$ (where $J$ is an ideal), and the set of all ideals of $R/I$
+      - Apply the correspondence thm for grps. where $I \subset S \subset R$, $S \rightarrow R/I$ is OTO (now must show that $S/I \subset R/I$) is a sub-ring, and ideals to ideals
+      - If $S \subset R$ is a sub-ring, then $S/I \subset R/I$ is a sub-ring? If $S \subset R$ is a ring, then $S/I \subset R/I$ is also a sub-ring
+        - ..
+  - ### **CHINESE REMAINDER THEOREM**
+    - If $a, b \in R$, then $a \cong b (I)$, if $a + I = b + I$, i.e $a -b \in I$ and $a \sim_I b$
+      - i.e $a \cong b (n)$, iff $a - b \in n\mathbb{Z}$
+    - If $a, b$ are relatively prime in $R$, then $\exists s, t \in R, as + bt = 1$, i.e $1_R$ is expressible as a lin. comb of $a, b$, and $1_R \in I + J$, thus $I + J = R$
+    - Notice if $I_{n_i}$ is $\langle n_i \rangle \subset R$, then $\bigcap I_{n_i} = \langle lcm(n_1, \cdots n_n) \rangle$, i.e if $n_i, n_j$ are relatively prime, then $\bigcap_i I_{n_I} = \langle n_1 \cdots n_n \rangle$
+    - $R_1, \cdots, R_n$ are rings, then $R_1 \times \cdots \times R_n$ is the set of $(a_1, \cdots, a_n)$ under component wise operations (think of dir. product of grps.)
+    - **thm**
+      - Let $R$ be a ring, and $I_1, \cdots, I_n$ be ideals in $R$ that are relatively prime in pairs, i.e $\forall i, j, i \not= j, I_i + I_j = R$
+        - If $a_1 = 1$, and $a_j = 0$, for $j = 2, \cdots, n$, there is $a \in R$, where $a \cong a_i (I_i)$ for all $i = 1, \cdots, n$
+        - More generally, if $a_1, \cdots, a_n \in R$, $\exists a \in R, a \equiv a_I (I_i)$
+        - If $b \in R$, where $b \equiv a_i (I_i)$ then $b \equiv a (\cap_i I_i)$. Conversely if $b \equiv a (\cap_I I_i)$, then $b \equiv a_i (I_i)$
+        - $R/(\bigcap_i I_i) \cong \Pi_i R/I_i$
+      - Proofs
+        - Fix $I_i$, then for each $I_j \not= i$, there exist $b_{j} \in I_i, c_j \in I_j, b_j + c_j = 1$ ($I_i, I_j$ are relatively prime), thus consider $\alpha = \Pi_{j \not =i } (b_j + c_j) = 1$, notice $\Pi_{j \not = i}c_j - 1 \in I_i$ and $\Pi_{j \not = i} c_j \in I_j$
+        - Use above proof, to get $c_i \equiv 1 (I_i), c_i \equiv 0 (I_j)$, and consider $\alpha = \Sigma_i a_i c_i$, then $\alpha = a_i c_i + \Sigma_{j \not = i} a_j c_j \equiv a_i c_i (I_i)$
+        - Forward
+          - Fix $a_1, \cdots, a_n$, and $b \in R$, where $b \equiv a_i (I_i)$, then fix $I_i$, consider $b - a = b - a_i + a_i - a \in I_i$, as $b - a_i, a_i - a \in I_i$, thus $b - a \in \cap_i I_i$
+        - Reverse
+          - Suppose $b \equiv a (\cap_i I_i)$, consider $I_i$, then $b - a_i = b - a + a - a_i \in I_i$, as $b - a, a - a_i \in I_i$
+        - Consider $\phi : R \rightarrow R/I_1 \times \cdots R / I_n$, where $a \in R$, $\phi(a) = (a + I_1, \cdots, a + I_n)$, then $ker(\phi) = \bigcap_i I_i$
+          - Furthermore, fix $a' \in (a_1 + I_1, \cdots , a_n + I_n)$, then $a' \cong a_i (I_i)$, which exists by **2** above
+          - If $a \sim b (\cap_i I_i)$, then $\phi(a) - \phi(b) = \phi(a - b) = (0 + I_i, \cdots)$ as $a - b \in \bigcap_i I_i$
+          - Result follows from first **ITM** for rings
+ - **problems**
+   - Notice $I \subset R$ a proper-ideal of $R$, is not a sub-ring of $R$, $1_R \not \in I$, and $S \subset R$ a proper sub-ring of $R$ is not an ideal of $R$, as $\exists s \in R \backslash S, a \in S, as \not \in S$
+   - Consider $m_i \in \mathbb{Z}$, where $(m_i, m_j) = 1$, and $a_1, \cdots a_n \in \mathbb{Z}$, $\exists a \in \mathbb{Z}$, where $a \equiv a_i (m_i)$
+     - Consider $m_i\mathbb{Z}$ are relatively prime ideals of $\mathbb{Z}$, thus apply $2, 3$ for existence of $a$, and congruence of $b$ if it exists, i.e $\cap_i m_i \mathbb{Z} = m_1\cdots m_n \mathbb{Z}$
+   - If $m_i \in \mathbb{Z}$ where $(m_i, m_j) = 1$, and $m = m_1 \cdots m_n$, show that $\mathbb{Z}_m \cong \mathbb{Z}_{m_i}$
+     - Consider $m_i \mathbb{Z}$, and apply **4** of **CRT**, i.e $\mathbb{Z}/\cap_i m_i\mathbb{Z} = \mathbb{Z} / m\mathbb{Z} = \mathbb{Z}_m$, and $\mathbb{Z} / m_i \mathbb{Z} = \mathbb{Z}_{m_i}$
+   - Suppose $R = R_1 \times R_2$, where $R'_1 = R_1 \times \{0\}, R'_2 = R_2 \times \{0\}$, show that $R / R_1' \cong R_2$, and $R / R_2' \cong R_1$
+     - Consider $\phi : R \rightarrow R_2$, where $\phi((r_1, r_2)) = r_2$, thus $ker(\phi) = R_1'$, apply first IST
+   - Show that the intersection of ideals $I_i$ coincides w/ product $\Pi_i I_i = \{\Sigma_i \Pi_{1 \leq k \leq n}a_{ki}\}$, $\bigcap_i I_i \cong \Pi_i I_i$
+     - Fix $\phi : \cap_i I_i \rightarrow \Pi_i I_i$, where $\phi(a) = (a_1, \cdots, a_n), a_i \in I_i$
+   - Let $I_1, \cdots, I_n$ be ideals in $R$, where $\Pi_i R/I_i \cong R/\cap_i I_i$, show that $I_i$ are relatively prime in pairs
+     - Notice map $\phi : R \rightarrow R/I_1 \times \cdots \times R/I_n$ is not EM? Cannot find pre-image of $a \in R/I_1 \times \cdots \times R/I_n$ if $I_i, I_j$ not relatively prime?
+     - Suppose $I_i, I_j$ are not relatively prime, and $\phi$ is iso, fix $(\cdots, 1 + I_i, \cdots, 0 +I_j)$, then the pre-image $a \in R$, $1 - a \in I_i, a \in I_j, 1 \in I_i + I_j$ (contradiction)
+- ## Maximal And Prime Ideals
+  - **Maximal Ideal** - $I$ is a maximal ideal that is not contained in any strictly larger proper ideal
+  - Every ideal $I \subset R$ is contrained in a maximal ideal.. every ring has at most one maximal ideal
+    - Apply zorns, consider $R' \subset 2^R$, (the set of proper ideals of $R$), then for each $A \subset R'$, $\bigcup_{I \in A} I$ is an ideal, and contains all ideals in the chain, thus by zorn's a **maximal** (by subset ordering) exists in $R$
+  - Let $M$ be ideal of comm. ring $R$, then $M$ is maximal iff $R/M$ is a field
+    - Forward - Suppose $M$ is a maximal ideal, suppose $a \in R/M$, then $aR + M = d$, if $d \not = R = \langle 1_R \rangle$, then $M \cup aR \supset M$, and $a \in M$, thus $\exists r \in R, ra + m = 1$, and $r + M \in R/M$ is inverse of $a + R$
+    - Reverse
+      - Suppose $R/M$ is a field, and $M$ is not maximal, then there exists $aR$ (ideal), where $aR \cup M \supset M$, and $a \in R/M$ does not have a mult. inverse, and $R/M$ is not a field
+      - Notice, since $R/M$ is a field, the only ideals of $R/M$ are $0R, R$, thus by Correspondence thm, the only ideals of $R$ containing $M$ is $R$ itself, and $M$ is maximal
+  - **prime ideal** - $P \subset R$ is a prime ideal, if $P$ is PI, and for $ab \in P$ then $a \in I \lor b \in P$
+  - If $P$ is an ideal in $R$ (commutative), then $P$ is prime ideal iff $R/P$ is integral domain
+    - Forward 
+      - Suppose $P$ is a prime ideal, where $a, b \in R/P$ then if $ab + P  = 0_{R/P}$, then $a \in P \lor b \in P \rightarrow a + P = 0 \lor b + P = 0$, thus $R/P$ is integral domain
+    - Reverse
+      - Suppose $R/P$ is an integral domain, thus for $a, b \in R/P$, if $ab + P = 0, ab \in P$, then $a + P = 0 \lor b + P = 0$
+  - In a commutative ring, a maximal ideal is prime
+    - Suppose $M$ is a maximal ideal, then $R/M$ is a field
+      - Field is integral domain
+        - Suppose $ab = 0 \rightarrow a^{-1}ab = a^{-1} 0 \rightarrow b = 0$
+      - And $R/M$ is an integral domain, thus $M$ is prime
+  - Let $f : R \rightarrow S$ is am EM of comm. rings
+    - If $S$ is a field, $ker(f)$ is a maximal ideal of $R$
+    - If $S$ is an integral domain, $ker(f)$ is a prime ideal of $R$
+  - Proof
+    - Suppose $S$ is a field, then $R/ker(f) \cong S$, thus for $a \in R/ker(f)$, where $f(a) \in S$, $f(a)^{-1} \in S$, and $\exists b \in R/ker(f), f(b) = f(a)^{-1}$ (isomorphic), thus $f(ab) = 1 \rightarrow ab = 1 \rightarrow b = a^{-1}$, and $R/ker(f)$ is a field, thus $ker(f)$ is a maximal ideal
+    - Suppose $S$ is integral domain, then $R/ker(f) \cong S$, then fix $a, b \in R/ker(f)$, then $f(ab) = f(a)f(b) = 0 \rightarrow a + ker(f) = ker(f) \lor b + ker(f) = 0$, and $R/ker(f)$ is integral domain, thus $ker(f)$ is a prime ideal
+  - Let $\mathbb{Z}[X] = \{f(X) = \Sigma_i a_ix^i, a_i \in \mathbb{Z}\}$, then $\langle X \rangle \subset \mathbb{Z}[X] = \{f(X) : a_0 = 0\}$, 
+    - $\langle 2 \rangle \subset \mathbb{Z}[X] = \{f(X) : a_i = 2k, k \in \mathbb{Z}\}$, notice $2 \not \in \langle X \rangle, X \not \in \langle 2 \rangle$, and $\langle 2 \rangle, \langle X \rangle$ proper ideals, (could both be maximal?)
+    - Consider $\phi : \mathbb{Z}[X] \rightarrow \mathbb{Z}$, where $\phi(f(X)) = a_0$, then $ker(\phi) = \langle X \rangle$, thus $\mathbb{Z}[X] / \langle X \rangle \cong \mathbb{Z}$, and $\langle X \rangle$ is prime ideal
+    - Consider $\psi : \mathbb{Z}[X] \rightarrow \mathbb{Z}_2[X]$, where $\psi(f(X)) = \overline{a_0} + \overline{a_1}x + \cdots$, where $\overline{a} = a (2)$, then $ker(\psi) = \langle 2 \rangle$, and $\langle 2 \rangle$ is a prime ideal
+    - Neither are maximal $\langle 2 \rangle \subset \langle 2, X \rangle$
+  - **problems**
+    - For $\langle n \rangle \subset \mathbb{Z}$ show that $\langle n \rangle$ is prime iff $n$ is prime
+      - Suppose $n$ is prime, then fix $a, b \in \mathbb{Z}$, then if $ab \in \langle n \rangle$, $n | ab \rightarrow n | a \lor n | b$, 
+      - Suppose $\langle n \rangle$ is prime, then if $ab \in \mathbb{Z}$ ...
+    - Suppose $I$ is a prime ideal of $\mathbb{Z}$, then $I$ is maximal
+      - Triv. suppose $a \in \mathbb{Z}/I$, notice $I = \langle n \rangle$, where $n$ is prime, then $(a, n) = n \lor (a, n) = 1$, thus the only ideals of $\mathbb{Z}/I$ are $\{0\}, \mathbb{Z}/I$, and $I$ is prime
+    - Consider $X \subset F[[X]]$ (formal power series in $\mathbb{Z}$)
+      - Notice $F[[X]]/\langle X \rangle \cong F$, thus $\langle X \rangle$ is maximal ideal
+    - Let $I$ be a proper ideal of $F[[X]]$, show that $I \subset \langle X \rangle$, thus $\langle X \rangle$ is the unique maximal ideal of $F[[X]]$
+      - Notice, if $I$ is ideal of $F[[X]]$, then if $a \in F, a \not \in I$...
+      - Ring with unique maximal ideal is called **local ring**
+    - Let $f : R \rightarrow S$ be a ring HM, where $R, S$ are comm. if $P$ is a prime ideal of $P \subset S$, show that $f^{-1}(P) \subset R$
+      - Consider $ab \in f^{-1}(P), f(ab)= f(a)f(b) \in P$, adn $f(a) \in P \rightarrow a \in f^{-1}(P) \lor \cdots$
+    - Show that above does not hold when $P$ is a max. ideal
+      - 
+    - Show that prime ideal $P$ cannot be intersection of two strictly larger ideals $I, J$
+        - Notice, $I \cap J \cong \Sigma a_i a_j$
+        - Suppose $P = I \cap J$, where $P \subset J$ (is strict), fix $j \in J$, then $ij \in P, \forall i \in I$, and either $I \subset P$, or $J \subset P$ (contradictions)
+- ## Polynomial Rings
+  - **Evaluation HM**
+    - Fix $x \in R$, then $E_x : R[X] \rightarrow R$ (only HM iff $R$ is comm.), where $E_x(f(X)) = f(x)$
+      - If $R$ is not comm.
+      - $E_x((1 + aX)(1 + bX)) = E_x(1 + aX + bX + abX^2) = 1 + ax + bx + abx^2$
+      - $E_x(1 + aX)E(1 + bX) = (1 + ax)(1 + bx) = 1 + ax + bx + axbx$ ($axbx \in R$)
+  - **Division Algorithm** - 
+    - $f, g \in R[X]$, where $g$ is monic (leading coeff. is one), then there are unique poly. $p, q$, where $f = pg + q$, where $deg q < deg g$, if $R$ is field $p$ can be any non-zero poly.
+      -  Assume $deg(g) < deg(f)$ (otherwise set $q = f, p = 0$), consider $r = f - lg, l \in R[X]$, suppose $deg(r) \geq deg(g)$, then let $a_n$ be the leading coeff. of $r$, and $r - x^{n - deg(g)}g$ contradicts the earlier hyp., thus $deg(r) < deg(g)$, and the thm. holds
+         -  Thus $f = lg + r$
+      -  If $f = p_1g + r_1$, $f = p_2g + r_2$, then $(p_1 - p_2)g = r_1 - r_2$, if $p_1 - p_2 \not = 0$, then $deg((p_1 - p_2)g) \not= deg(r_1 - r_2)$
+  - **Remainder Theorem**
+    - If $f \in R[X]$, and $a \in R$, then $\exist q \in R[X]$ where $f(X) = q(X)(X - a) + f(a)$
+      - Consider **division algorithm** with $f = f(X), g = X - a$, then, $f = q(X)(X - a) + r$, where $deg(r) < 1 \rightarrow r \in R$, and $f(a) = r$,
+  - If $R$ is an ID, then $f \in R[X]$, where $deg(f) = n$, has at most $n$ roots
+    - Suppose $R$ is ID, then continue by induction on $deg(f)$, when $deg(f) = 1$, $f(X) = X - a, a \in R$, and $a$ is the only root. Assume the hyp. holds for $deg(f) \leq n$, then fix $deg(f) = n + 1$, notice, $f(X) = q(X)(X - a) + f(a)$, then if $f(a) = 0$, $f$ has $deg(q(X)) + 1 \leq n + 1$ roots. The proof follows by ind..
+    - Alternative proof, fix $f \in R[X]$, if $f$ has no roots we are done. Suppose $f(a_1) = 0$, then $f(X) = q(X)(X - a_1)^{n_1}$, if $a_2 \not = a_1$ is another root, then $0 = f(a_2) = q(X)(a_2 - a_1)^{n_1}$, since $(a_2 - a_1)^{n_1} \not = 0$, and $R$ is ID, then $q(a_2) = 0$, where $deg(q) \leq n$, and the hyp holds, thus $root(f) \leq deg(q) + 1 \leq n + 1$
+  - **problems**
+    - Let $a, b \in \mathbb{Z}$, consider the **Euclidean Algorithm**, where
+      - $a = q_1b + r_1$, where $r_1 < b$, otherwise, set $q_1' = q_1 + b, r' = r - b$, 
+      - $b = q_2r_1 + r_2$
+      - $\cdots$
+      - $r_n = q_{n+2}r_{n+1} + r_{n+2}$, until $r_i = 0$
+    - Show that $gcd(a, b) = r_i$, where $r_{i - 1} = q_{i + 1}r_i$
+      - Notice, if $k | a \land k | b$, then $c_ak = q_1c_bk + r_1\rightarrow k(c_a - q_1c_b) = r_1$, and $k |  r_1$,
+        - Thus if $k = gcd(a, b)$, then $k | a \land k | b \rightarrow k | r_1$, and $gcd(a, b) | gcd(b, r_1)$, similarly, since $a = q_1b + r_1$, and $gcd(b, r_1) | b \land gcd(b, r_1) | r_1$, $gcd(b, r_1) | a$, and $gcd(b, r_1) | gcd(a, b) \rightarrow gcd(a,b) = gcd(b, r_1)$
+      - Naturally, $gcd(a, b) = gcd(b, r_1) = gcd(r_1, r_2) \cdots gcd(r_{i-2}, r_{i - 1})$, where $r_{i - 2} = q_{i}r_{i - 1}$, and $gcd(r_{i - 2}, r_{i - 1}) = r_{i - i}$, thus $gcd(a,b) = r_{i - 1}$
+    - If $d = gcd(a,b)$ show that there are $x, y \in \mathbb{Z}$ where $d = ax + by$
+      - Notice, $a = k_ad, b = k_bd$, where $gcd(k_a, k_b) = d'$, where $gcd(a,b) = dd' = d$, and $d' = 1$, thus $gcd(k_a, k_b) = 1$, notice, since $\mathbb{Z} = \langle k_a,  k_b\rangle$, there exist, $x, y \in \mathbb{Z}$, where $xk_a + yk_b = 1$, and $xk_a d + yk_b d = ax + by = d$
+    - Use above result to show that $\mathbb{Z}_p$ is field iff $p$ is prime
+        - Fix $l \in \mathbb{Z}_p$, where $l \not= 0$, then $gcd(l, p) = 1$, and $\exists x, y \in \mathbb{Z}, xl + yp = 1$, and, $l \sim 1$, thus $x = l^{-1} (p)$, and $\mathbb{Z}_p$ is field
+        - Similar to above
+    - Define 3 sequences by
+      - $r_i = r_{i - 2} - q_ir_{i - 1}$
+      - $x_i = x_{i - 2} - q_i x_{i - 1}$
+      - $y_i = y_{i- 2}- q_i y_{i - 1}$
+    - For $i \geq -1$, where $r_{-1} = a, r_0 = b, x_{-1} = 1, x_0 = 0, y_{-1} = 0, y_0 1$, show that one can generate $r_i = ax_i by_i$ for all steps of the algo, and at each stage $r_i = ax_i = by_i$
+      - $r_i = ax_i + by_i$
+        - For $r_1 = a - q_1b$, $x_1 = 1$, $y_1 = q_1$ -> checks out
+        - Suppose that $r_n = ax_n + by_n$
+        - For $r_{n + 1} = r_{n - 1} + q_{n + 1}r_n = ax_{n - 1} + by_{n - 1} + q_{n + 1}(ax_n + by_n) = a(x_{n - 1} + q_{n + 1}y_n)  + b(y_{n - 1} + q_{n + 1}y_n) = ax_{n + 1} + by_{n + 1}$
+      - Notice, $r_{i - 2} = q_i r_{i - 1} + r_i$, and $r_i = r_{i - 2} - q_i r_{i - 1}$, thus the algorithm is generated by above steps
+      - Also notice $q_i = \frac{r_{i -2} - r_{i}}{r_{i - 1}}$, where $r_{i} < r_{i - 1}$ (thus for integer division it can be discarded ()will be zero)
+      - Thus algorithm is, set $q_i = \frac{r_{i - 2}}{r_{i - 1}}$, and proceed setting up aux variables until, $r_i = 0$, then set $gcd(a, b) = r_{i - 1}$
+        - Memoize prev. solutions.. for each value (can also get rid of space constraint)
+    - If $a(X)$ and $b(X)$ are poly. w/ coeffs. in $F$ (field), the EA can be used to find their GCD, i.e a monic poly. of maximal deg $q = gcd(f, g)$, and $q | f \land q | g$
+      - Show that $d(X) = gcd(f(X), g(X))$, then $\langle d(X) \rangle = \langle f(X), g(X) \rangle$
+        - That $\langle d(X) \rangle \supset \langle f(X), g(X) \rangle$ is simple
+        - Suppose $k(X) \in \langle d(X) \rangle$, then $k(X) = p(X)d(X) = p(X) (a(X)f(X) + b(X)g(X))$, and $k(X) \in \langle f(X), g(X) \rangle$
+    - **Lagrange Interpolation Formula**
+      - Let $a_0, a_1, \cdots, a_n \in F$, where $F$ is a field, define $P_i(X) = \Pi_{j\not= i} \frac{X - a_j}{a_i - a_j}, i = 0, 1, \cdots, n$, if $b_0, \cdots, b_n$ are arb. elements of $F$, use $P_i$ to find $f(X)$, $deg(f) \leq n$, where $f(a_i) = b_i$ for all $i$
+        - $f(X) = \Sigma_i b_i P_i(X)$, notice each $deg(P_i(X)) = n$
+      - Show that the $f(X)$ determined previously is unique.
+        - Suppose that $g(X) \in R[X]$, consider $f - g$, then $\forall i, (f - g)(a_i) = 0$ (i.e there are $n + 1$ roots), and thus $deg(f - g) \geq n$, 
+- ## Unique Factorization
+  - Let $a, b \in R$, then $a, b$ are **associates** if $a = ub$ for some unit $u \in R$
+  - $a \in R$, then $a$ is **irreducible** if it can't be represented as a product of non-units
+  - $p \in R$ is **prime** if when $p | a_1 \cdots a_n$, then $p | a_1 \lor \cdots \lor p | a_n$ (i.e if $p$ divides a product of terms, it divides at least one of the terms)
+  - I.e in $\mathbb{Z}$ $p$ is prime iff it is irreducible
+    - Irreducibles in $\mathbb{Z}$ are $1, -1$, 
+  - If $a$ is prime, then $a$ is irreducible, the converse is not true
+    - Suppose $p \in R$, is prime, and $p = ab$, then WlOG $p | a$, thus $a = pk, k \in R$, and $a = abk$, thus $1 = bk$, and $b$ is a unit
+    - Consider $2 \in \mathbb{Z}[\sqrt{-3}]$, suppose $(a + b\sqrt{-3})(c + d\sqrt{-3}) = 2$, then $\overline{2} = 2 = (a - b\sqrt{-3})(c - d\sqrt{-3})$, thus $4 = 2\overline{2} = (a^2 + 3b^2)(c^2 + 3d^{2})$, and $(a^2 + 3b^2) | 4 \land (c^2 + 3d^{2}) | 4$, notice neither can be $2$ ($\sqrt{2} \not\in \mathbb{Z}$), thus one is $4$ and the other is $1$, thus $c = 1, d = 0$ (resp. $a, b$), and $2$ is irreducible (one of factors must be unit $1$)
+      - $2$ is not prime as $2 | 4$, and $4 = (1 + \sqrt{-3})(1 - \sqrt{-3})$, and $2\not | (1 + \sqrt{-3}) \lor 2 \not | (1 - \sqrt{-3})$ thus $2$ is irreducible, but not prime
+  - **Definition**
+    - **Unique Factorization Domain** - $R$ (integral domain)
+      - Every non-zero element $a \in R$, can be expressed as follows $a = up_1\cdots p_n$ (where $p_i$ are irreducible, and $u \in R$ is a unit)
+      - If $a = vq_1\cdots q_m$, then $m = n, \forall p_i = q_iu$ (i.e the $p_i, q_i$ are associates)
+    - In UFD $a$ is irreducible iff $a$ is prime
+      - Reverse proved above
+      - Suppose $a \in R$ (UFD) is IRD. then $a | bc$, and $ad = bc$, thus $aud_1\cdots d_n = ub_1\cdots b_n vc_1\cdots c_n$, in which case $uad_1\cdots d_n = ub_1\cdots b_n c_1 \cdots c_n$, and $d_i$ must be associates of $b_i \lor c_i$, and since $a$ is irreducible, $a$ must also be an associates of some $c_i \lor b_i$, thus $a | c \lor a | d$
+  - When is ID a UFD?
+    - Let $R$ be ID
+      - If $R$ is a UFD, $R$ satisfies the **ascending chain condition**, on PIDs, i.e $a_1, \cdots \in R$, where $\langle a_1 \rangle \subset \langle a_2 \rangle \subset \cdots$, then for some $N$, $\forall n \geq N, \langle a_n \rangle = \langle a_{n + 1} \rangle$
+        - This implies **UF1** i.e every $r \in R$ can be factored into unique irreducibles
+      - If every $r \in R$, $r$ is irreducible, then $r$ is prime, $R$ is UFD
+    - Suppose $R$ is UFD, and consider $a_i \subset R$, notice, each $a_i = up_1\cdots p_n$, where $p_i$ are irreducibles, in which case, if $\langle a_i \rangle \subset \langle a_{i + 1} \rangle$, $a_{i + 1} | a_i$, and $a_{i + 1}$ has the same or fewer irreducible factors as $a_i$, there are only finitely many factors, thus the sequence can only finitely continue w/ $a_{i + n} = p_i$, thus if $\langle a_{i + n} \rangle \subset \langle a_{i + n + 1} \rangle$, then $a_{i + n + 1} = pu \lor a_{i + n + 1} = u$ (where $u \in R$, is a unit)
+    - Suppose $R$ satisfies **acc**, fix $a \in R$, and $a$ cannot be factored into irreducibles, then consider $a_i$, where $a_0 = a$, and $a_1 | a$, where $a_1 \not \in \langle a \rangle$, then there exists $N$, where $n \geq N, \langle a_n \rangle \subset \langle a_{n + 1} \rangle$, thus $a_n$ is irreducible, otherwise, fix $b | a$, and set $a_{N + 1} = b$ (contradiction), $a_N | a$ is an irreducible factor of $a$. Continue this practice with $a'_0 = a$, and $a^i_1 = a|a_na^1_n \cdots$ to get all irreducible factors of $a$
+    - Suppose $R$ satisfies **UF1** (every $a \in R$ can be factored into irreducibles), and every irreducible $a \in R$ is prime.
+      - Fix $a \in R$, where $a = up_1 \cdots p_n$, and $a = vq_1\cdots q_n$, then $p_1 | vq_1\cdots q_n$, and since $p_1$ is irreducible -> prime, $p_1 | q_i$ for some $i$, however $q_i$ is prime, and $p_1 = q_ia_i$ (where $a_i$ is a unit), continue this process
+  - **PID** - ID in which every ideal is principal
+  - Every PID is a UFD
+    - WTS: every irreducible in PID is prime + **acc**
+    - acc
+      - Fix $a_i \subset R$, then consider $I = \bigcup_i \langle a_i \rangle$, and $I = \langle b \rangle$, thus $\langle b \rangle \subset \bigcup \langle a_i \rangle$, and for some $a_n, \langle b \rangle \subset \langle a_n \rangle$, thus take $N = n$
+    - Every IRD in PID is prime
+      - Suppose $R$ is a PID, and $a \in R$ is irreducible, then $\langle a \rangle \subset I$ where $I$ is a maximal ideal, and $I = \langle b \rangle$ (PID), thus $a \in \langle b \rangle \rightarrow b | a$, and $b = au$ (associates, since $a$ is irreducible), thus $\langle a \rangle = I$, and $\langle a \rangle$ is maximal -> prime, thus $a$ is prime
+    - $R$ is a PID iff $R$ is a UFD, and every non-zero prime ideal of $R$ is maximal
+      - Forward - Suppose $R$ is PID, then $R$ is UFD by above, fix prime $p \in R$, then $\langle p \rangle \subset \langle q \rangle$ ($\langle q \rangle$ is maximal), then $q | p$, but $p$ is prime $\rightarrow$ maximal, and $q = pu$ (where $u$ is a unit), thus $\langle p \rangle = \langle q \rangle$ (and $p$ is maximal)
+  - **problems**
+    - If $R$ is UFD, and every non-zero prime ideal of $R$ is maximal, consider $I \subset R$, $I$ is ideal, and $I \not= 0$, then for $a \in I$, $a = up_1\cdots p_t$, ($R$ is UFD), where $p_i$ are IRD, let $r = r(I)$, be the minimum $t$. We prove by induction on $r$ that $I$ is principal
+      - Suppose $r = 0$, that is $u \in I$, where $u$ is a unit, thus $u | 1$, and $I = \langle u \rangle = \langle 1 \rangle$
+      - Suppose the result holds for all $r < n$, let $r = n$, thus $up_1\cdots p_n \in I$, and $p_1\cdots p_n \in I$, choose $\langle p_1 \rangle$ (maximal ideal by hyp.), thus $R/\langle p \rangle$ is a field, if $b \in I \land b \not\in \langle p_1 \rangle$, show that for some $c \in R$, $bc - 1 \in \langle p_1 \rangle$
+        - consider $b + \langle p_1 \rangle \in R/\langle p_1 \rangle$ (a field), thus $c= b^{-1} \in R/\langle p_1 \rangle$, where $bc + \langle p_1 \rangle = 1 + \langle p_1 \rangle$, and $bc - 1 \in \langle p_1 \rangle$
+      - Show that the above implies $p_2\cdots p_n \in I$
+        - as $bc - 1 \in \langle p_1 \rangle \rightarrow \exists d, bc - dp_1 = 1$, thus fix $b \in I \backslash \langle p_1 \rangle$, then $bcp_2\cdots p_n - dp_1\cdots p_n = p_2 \cdots p_n \in I$, and $r(I) = n - 1 < n$ (a contradiction), thus $I \backslash \langle p_1 \rangle = \emptyset$, and $I \subset \langle p_1 \rangle$
+      - Let $J = \{x \in R: xp_1 \in I \}$, show that $J$ is an ideal
+        - Fix $a, b \in J$, and $a + b = (x_1 + x_2)p_1 \in I$, thus $a + b \in J$, naturally $J$ is closed under addition, thus $J$ is an ideal
+      - Show that $Jp_1 = I$
+        - naturally $Jp_1 \subset I$, as $x \in Jp_1$, $x = x'p_1$, where $x' \in J \rightarrow x'p_1 \in I$
+        - Fix $b \in I$, then $b \in \langle p_1 \rangle$, and $b = b'p_1$, thus $b' \in J$, and $b \in Jp_1$
+      - Finish proof
+        - Consider $J$, then $p_2 \cdots p_n \in J$, thus $r(I) \leq n-1$, and $J = \langle b \rangle$, and $Jp_1 = I$, thus $I = \langle bp_1 \rangle$
+    - $p, q \in R$ (primes), where $R$ is ID, show that $\langle p \rangle \not \subset \langle q \rangle$
+      - Suppose so, then $p \in \langle p \rangle \subset \langle q \rangle$, and $q | p$, that is $qk = p$, and $p | qk$, thus $p | q \lor p | k$, notice if $p | q$, then $\langle p \rangle = \langle q \rangle$ (contradiction), otherwise $p | k$, but $k | p$, thus $p = qp$ ($q$ is associate), and $q$ is a unit ($\langle q \rangle$ is not proper, thus not prime) (contradiction)
+    - If $R$ is UFD, and $P \subset R$ is nonzero-prime ideal, show that $P$ contains a principal prime ideal
+      - Fix $a \in P$, thus $a = p_1\cdots p_t$, then $p_1 \in P \lor p_2\cdots p_n \in I$ continue until single element $p_1 \in I$, thus $\langle p_i \rangle \subset I$, and $p_i$ is irreducible thus prime in $R$ (UFD)
+- ## Principal Ideal Domains + Euclidean Domains
+  - Let $R$ be a PID, where $A \subset R$ is a non-empty subset, then $d = gcd(A)$ iff $\langle A \rangle = \langle d \rangle$ 
+    - Forward 
+        - Let $d = gcd(A)$, notice, $\langle A \rangle \subset \langle d \rangle$, suppose $\langle A \rangle = \langle b \rangle$, then $\forall a \in A, b | a$, thus $b | d = gcd(A)$, and $\langle d \rangle \subset \langle b \rangle = \langle A \rangle$, thus $\langle d \rangle = \langle A \rangle$
+    - Reverse
+      - Suppose $\langle d \rangle = \langle A \rangle$, naturally $d | gcd(A)$, for the reverse direction, $d \in \langle A \rangle = \langle gcd(A) \rangle$, thus $gcd(A) | d$, thus $d = gcd(A)$
+  - ## Euclidean Domains
+    - Let $R$ be ID, then $R$ is **Euclidean Domain** if $\Psi : R \backslash \{0\} \rightarrow \mathbb{Z}_{> 0}$, with the following property
+      - If $a, b \in R$, then $\exists q, r \in R$, where $a = bq + r$, and $\Psi(r) < \Psi(b)$ or $r = 0$
+  - If $R$ is ED, then $R$ is PID
+    - Let $I$ be an ideal of $R$, If $I = \{0\}$ then $I = \langle 0 \rangle$, suppose $I \not = 0$, then fix $b = min_{a \in I}\Psi(a)$, choose $a \in I$, then $a = bq + r$, where $\Psi(r) < \Psi(b)$, thus $r = 0$, and $a = qb$, thus $a \in \langle b \rangle$, and $I \subset \langle b \rangle$, thus $I = \langle b \rangle$
+  - ### Example
+    - Let $d = \pm 1, \pm 2, 3$, then $\mathbb{Z}[\sqrt{d}]$ is an ED, where $\Psi(a + b\sqrt{-d}) = |a^2 - db^2|$
+      - Fix $a, b \in \mathbb{Z}[\sqrt{d}]$, consider $x + y\sqrt{d}$, notice $x + y\sqrt{d}$, however $x, y \in \mathbb{Q}$, thus choose $x_0 + y_0\sqrt{d}$, where $|x - x_0| < 1/2$, and $|y - y_0| < 1/2$
+        - $q = x_0 + y_0\sqrt{d}$, and $r = a - bq = b(x + y\sqrt{d}) - bq = b((x -  x_0) + (y - y_0)\sqrt{d})$
+        - For $\Psi(b) > \Psi(r)$, then $\Psi(r) = \Psi(b)((x - x_0) + (y - y_0)\sqrt{d}) = \Psi(b)|1/4 + 1/4d|$, thus for $\pm 2, \pm 1, -3$
+  - **problems**
+    - Let $A = \{a_1, \cdots a_n \} \subset R$ ($R$ is PID). Show that $m$ is lcm iff $\langle m \rangle = \langle \bigcap_i \langle a_i \rangle$
+      - Forward
+        - Suppose $m$ is lcm of $a_i$, then $a_i | m$, thus $m \in \langle a_i \rangle$, and $\langle m \rangle \subset \langle \cap_i a_i \rangle$, furthermore, $m | a_1\cdots a_n$, and $\langle \cap_i a_i \rangle = \langle a_1 \cdots a_n \rangle$, thus $a_1 \cdots a_n \in \langle m \rangle$, and $\langle m \rangle = \langle cap_i a_i \rangle$
+      - Reverse
+        - Suppose $\langle m \rangle = \langle \cap_i a_i \rangle$, then $a_i | m$, and $lcm(a_i) | m$, furthermore, $lcm(a_i) \in \langle \cap_i a_i \rangle = \langle m \rangle$, thus $m | lcm(a_i)$, and $m = lcm(a_i)$
+    - Suppose $R$ is ED, where $\Psi(a) \leq \Psi(ab)$ for all non-zero elements, show that $\Psi(a) \geq \Psi(1)$, with eq if $a$ is unit
+      - If a is unit, then $ab = 1$, and $\Psi(1) = \Psi(ab) \geq \Psi(a)$, however, $\Psi(a) = \Psi(a1) \geq 1$, and $\Psi(1) = \Psi(a)$
+      - Suppose $a$ is not a unit
+        - Then $\Psi(a) = \Psi(a1) \geq \Psi(1)$
+      - Suppose $\Psi(a) = \Psi(1)$
+        - then $\Psi(1) \geq \Psi(a)$, consider $1 = aq + r$, then $\Psi(r) < \Psi(a) = \Psi(1)$ (false), thus $r = 0$
+    - Let $R = \mathbb{Z}[\sqrt{d}]$, where $\Psi(a + b\sqrt{d}) = |a^2 - db^2|$, show that $\forall \alpha, \beta \in \mathbb{Z}[\sqrt{d}], \Psi(\alpha \beta) = \Psi(\alpha)\Psi(\beta)$
+      - calculational
+    - Let $R = \mathbb{Z}[\sqrt{d}]$, where $d$ is not a perf. square, show that 2 is not prime in $R$
+      - $2 | d(d - 1)$, as $2 | d \lor 2 | d - 1$, however, $d^2 - d = (d + \sqrt{d})(d - \sqrt{d})$, and $2$ divides neither of the divisors
+    - If $d$ is negative integer, w/ $d \leq -3$, show that $2$ is IRD in $\mathbb{Z}[\sqrt{-d}]$
+      - Suppose $a | 2$, where $a \in \mathbb{Z}[\sqrt{d}]$, then $|a^2 - db^2| | 4$, however $\Psi(a) \geq \Psi(2)$
+    - If $\alpha = a + bi$ is a gaussian integer, $\Psi(\alpha) = a^2 + b^2$, if $\Psi(\alpha)$ is prime in $\mathbb{Z}$, show that $\alpha$ is prime in $\mathbb{Z}[i]$
+      - Also can show irreducibility
+      - Suppose $\alpha = \beta \gamma$, then $\Psi(\alpha) = \Psi(\beta)\Psi(\gamma)$, thus WLOG $\Psi(\beta) = 1$ ($\Psi(\alpha)$ is IRD), and $\beta$ is unit
+- ## Rings of Fractions
+  - Given $R$ (comm. ring), define **field of fractions** as $R$ and all quotients in $R$, however, if $R$ is not ID, and $a,b,c,d\in R, bd = 0$, then $\frac{a}{b}\frac{c}{d} = \frac{ac}{0}$?
+  - ### Definitions
+    - Let $S \subset R$, $S$ is a **multiplicative subset** if, $0 \not \in S$, $1 \in S$, and if $a, b \in S, ab \in S$ (closed under mult.)
+      - The set of all $a \in S$, that is not a zero-divisor
+      - if $P \subset R$ is prime ideal, then $R/P$, fix $a, b \in R/P \backslash \{0\}$, $a, b \in R/P, a,b \not = 0$, then $ab \not \in R/P \backslash \{0\} \rightarrow ab \in P$ (contradiction)
+    - Define $\sim$ over $R \times S$ ($R$ is ID / comm.), where $(a, b) \sim (c, d) \iff \exist s \in S, s(ad - bc) = 0$, then $ad - bc = 0$ ($s \in S$)
+        - Consider $(a, b) \in R \times S$, then, $\forall s \in S, s(ab - ab) = s0 = 0$, thus $(a, b) \sim (a, b)$
+        - If $(a, b), (c, d) \in R \times S$, then $(a, b) \sim (c, d) \rightarrow \exist s \in S, s(ad - bc) = 0$, and $ad - bc = 0$, then $cb - da = bc - ad = -(ad - bc) = 0$, thus $(c, d) \sim (a, b)$
+        - Suppose $(a, b), (c, d), (e, f) \in R\times S$, where $(a, b) \sim (c, d) \land (c,d) \sim (e, f)$, then $s(ad - bc) = t(cf - de) = 0$, then consider $st(adf - bcf) = st(bcf - bde) \rightarrow st(adf - bcf) + st(bcf - bde) = st(adf - bde) = std(af - be) = 0$, and $(a, b) \sim (e, f)$, thus $\sim$ is equiv. relation
+    - **ring of fractions** - The set of equivalence classes of $R \times S$ under $\sim$
+      - Addition of $(a, b), (c, d) \in R \times S$, is $(a, b) + (c, d) = (ad + bc, bd)$, i.e $\frac{a}{b} + \frac{c}{d} = \frac{ad + cd}{bd}$
+      - Multiplication of $(a, b)(c, d) = (ac, bd)$
+      - additive / multiplicative identities inferred $(0, 1), (1, 1)$, and $-(a, b) = (-a, b)$
+    - Also denote **ring of fractions** as $S^{-1}R$
+    - Let $S \subset R$ be a multiplicative subset of $R$ (comm. ring), then $S^{-1}R$ is a commutative ring. If $R$ is an integral domain, then so is $S^{-1}R$. If $S = R/\{0\}$, and $R$ is ID, then $S^{-1}R$ is a field
+      - operations are well-defined
+        - **addition** - Arithmetic
+          - I.e if $(a_1, b_1) \sim (c_1, d_1) \land (a_2, b_2) \sim (c_2, d_2) \rightarrow (a_1, b_1) + (a_2, b_2) \sim (c_1, d_1) + (c_2, d_2)$
+        - **multiplication** - Arithmetic
+          - Similar as above
+      - Show that $S^{-1}R$ is commutative
+        - Fix $(a,b), (c,d) \in S^{-1}R$, then, $ad + bc \in R$, and $bd \in S$, (apply comm.)
+        - Consider $(a,b)(c,d) = (ac, bd) = (ca, db) = (c,d)(a,b)$ (thus $S^{-1}R$ is comm.)
+      - Suppose $R$ is ID, fix $(a, b), (c, d) \in S^{-1}R$, where $(a,b)(c,d) = 0$, then $(ac, bd) = (0, s), s \in S$, thus $ac = 0$, and either $a = 0$, or $c = 0$, WLOG $a = 0$, thus $(a, b) = (0, b) = 0$, and $S^{-1}R$ is ID
+      - Suppose $R$ is ID (then $S^{-1}R$ is ID), and $S = R\backslash \{0\}$, fix $(a, b) \in S^{-1}R$, then $(b, a) \in S^{-1}R$, and $(a,b)(b,a) = (ab, ab) = 1$, and $S^{-1}R$ is a field
+    - Is $R \subset S^{-1}R$? Consider $f : R \rightarrow S^{-1}R$, where $f(a) = (a, 1)$, then $f$ is HM. If $S$ has no zero divisors, then $f$ is MM, and $R$ is **embedded** in $S^{-1}R$
+      - $R$ (comm. ring) can be embedded in its **complete** ring of fractions, $S^{-1}R$, where $S$ is all non-zero divisors in $R$ (not necessarily ID)
+      - An integral domain can be **embedded** in its quotient field
+    - Proofs
+        - Notice $0 \in R, f(0) = (0, 1) = 0_{S^{-1}R}$, $1 \in R, f(1) = (1, 1) = S^{-1}R$, for $a, b \in R, f(a + b) = (a + b, 1) = (a, 1) + (b, 1) = f(a) + f(b)$, $f(ab) = (ab, 1) = (a, 1)(b, 1) = f(a)f(b)$
+        - If $S$ has no zero divisors $f$ is MM
+            - Suppose $a \in ker(f)$, then $f(a) = (0, 1)$, then for $s \in S, s(a) = 0$, thus $a= 0$, and $ker(f) = \{0\}$ thus $f$ is MM
+    - The quotient field $F$ of $R$ is the smallest field containing $R$
+    - **problems**
+      - If $D$ is an integral domain, and is a field, then what is the quotient field of $D$
+        - Let $F$ be the QF for $D$, then $D \subset F$, however, $D \subset D$, and is a field, thus $F \subset D$, and $D = F$, thus $D = F$
+      - If $D$ is $F[X]$ of all poly. over $F$, what is QF of $D$
+        - $F \equiv S^{-1}D$, where $S = D \backslash \{0\}$
+      - Let $R$ be ID, with QF $F$, and let $h : R \rightarrow L$ where $L$ is a field, show that $H$ has unique extension to MM from $F \rightarrow L$
+        - Suppose $(a, b) \in F$, then $\phi(a, b) = f(a)f(b)^{-1} \in L$
+          - HM, fix $1 \in F$, i.e $(s, s)$, then $\phi(s, s) = f(s)f(s)^{-1} = 1$ (notice $f(s)^{-1}$ exists in $L$), similarly for $0 = (0, s) \in F, \phi(0, s) = f(0)f(s)^{-1} = 0$, fix $(a, b), (c, d) \in F$, then $\phi((a, b) + (c,d)) = \phi((ad + bc, bd)) = f(ad + bc)f(bd)^{-1} = (f(a)f(d) + f(b)f(c))f(b)^{-1}f(d)^{-1} = f(a)f(b)^{-1} + f(c)f(d)^{-1} = \phi(a, b) + \phi(c,d)$, multiplication follows
+          - MM
+            - Suppose $(a, b) \in ker(\phi)$, then $f(a)f(b)^{-1} = 0$, thus $f(a) = 0 \lor f(b)^{-1} = 0$, and $a = 0$, thus $(a, b) = (0, b) = 0$
+          - Uniqueness
+      - Let $S \subset R$ be a MS. where $f : R \rightarrow S^{-1}R$, $f(a) = (a, 1)$. If $g : R \rightarrow R'$ is HM, where $s \in S, g(s)$ is a unit in $R'$, find $\overline{g} : S^{-1}R \rightarrow R'$, where $\overline{g}(f(a)) = g(a), a \in R$
+        - Show that there is only one $\overline{g}$
+            - $\overline{g}((a, b)) = \overline{g}((a, 1))\overline{g}((b, 1))^{-1} = g(a)g(b)^{-1}$
+- ## Irreducible Polynomials
+- **irreducible poly** - Let $R[X]$ be a poly. ring, and for $f \in R[X]$, then $f$ is irreducible iff $f$ cannot be factored into two non-units
+  - If $R$ is a field, then $deg(g), deg(h) > 0$, otherwise, $f = gh$, where $g, h$ is a unit, if $f$ can be factored into $f = gh, 0 < deg(g) , deg(f)$ (same for $h$) then $f$ is irreducible
+- Let $D$ be a UFD, and $F$ is QF of $D$, and $f \in D[X]$, where $f = gh, g,h \in F[X]$, then $\exists \lambda \in F$, where $\lambda g \in D[X], \lambda^{-1}h \in D[X]$, and if $f \in D[X]$ is factorable in the QF $F$, it is also factorable in $D[X]$
+  - Notice $g = \Sigma_i a_i, a_i \in F, a_i = p/q, p, q \in D$, thus for $g, h$ consider the lcm of their coeffs $a, b$, where $g^* = ag \in D[X], h^* = bh \in D[X]$, and $cf = abfg \in D[X]$, notice, that for $c = up_1 \cdots p_n$, $p_i | g$, thus $f = g_0 h_0$, where $g = \lambda g_0$, thus $h = \lambda^{-1}h_0$
+- **content** - The gcd of coefficients of polynomials
+- Let $f, g \in D[X]$, where $D$ in a unique factorization domain, then $c(fg) = c(f)c(g)$
+  - Notice $fg = c(fg)f''g''$, similarly, $fg = c(f)c(g)f'g'$, and $c(f)c(g) | fg$, similarly, $c(fg) | fg$, thus via the above result, $c(fg) | c(f)c(g) a_i$, and $c(fg) = c(f)c(g)$
+- If $h$ is non-constant poly. in $D[X]$, and $h = ah^*$ is prim. and $a \in D$, then $c(h) = a$
+  - Notice, $c(h) = c(a)c(h^*) = a 1$
+- Let $D$ be UFD, where $F$ is QF, if $f \in D[X]$, then $f$ is IRD over $D$ iff, $f$ is prim. + IRD over $F$
+  - Forward - Suppose $f$ is IRD in $D[X]$, and $f$ is not IRD in $f$, then, $f$ is not IRD in $D$ (apply above)
+  - Reverse - Follows naturally, $D \subset F$
+- If $R$ is UFD, then so is $R[X]$
+  - Take $F$ to the QF of $R$, then $f \in R[X] \subset F[X]$, where $f = uf_1\cdots f_k$ ($F[X]$ is ED -> UFD), where $f_i$ is irreducible in $F$, notice, taking $g = (f_2\cdots f_k)f_1$, one that that $f_1 = \lambda f_1' \in R[X] < deg(f), \lambda \in R$, (similarly for $f_2\cdots f_k$), thus $f$ is factorable into IRD poly. in $R[X]$
+  - Uniqueness
+    - Suppose that $f = f_1 \cdots f_k = g_1 \cdots g_m$, notice $g_i | f \rightarrow g_i | f_j$ for some $f_j$,
+- **Eisenstein Irreducibility Criterion**
+  - Let $R$ be UFD with QF $F$, and let $f(X) = a_nX^n + \cdots a_0 \in R[X]$, where $n \geq 1$, $a_n \not = 0$, if $p$ is prime in $R$, and $p| a_i, 0 \leq i < n$, but $p \not | a_n$, and $p^2 \not | a_0$, then $f$ is IRD over $F$
+    - Can assume that $f = c(f)f^*$, where if $p | c(f) \rightarrow p | f$, thus we may take $f$ to be a prim. poly in $R[X]$. Suppose $f = gh$, where $g = g_0 + g_1 x + \cdots g_r x^r$, and $h = h_0 + h_1 x + \cdots h_r x^r$, then $r = 0$ implies that $f = g_0h$, thus $g_0 | c(f) = 1$, thus and $f$ is IRD ($g_0$ is a unit in $F$). Thus $deg(g) \geq 1, deg(h) \geq 1$, consider $a_0 = g_0 h_0$, then $p | a_0 \rightarrow p | g_0 \lor p | h_0$ (but not both, $p^2 \not | a_0$), WLOG, $p \not | h_0$, then $\forall a_i = h_0 g_i + \cdots \rightarrow p | g_i, 0 \leq i < n$, notice $a_n = g_r h_s$, however, $p | g_r \rightarrow p | a_n$ (contradiction).
+- **problems**
+  - **rational root test** - Let $f(X) = a_nX^n + \cdots + a_1X + a_0 \in \mathbb{Z}[X]$. If $f$ has a rational root $u/v$, where $gcd(u,v) = 1$, show that $v | a_n$, and $u | a_0$
+    - $u | a_0$ - Notice $a_0 v^n = - (a_n u^n + a_{n - 1}u^{n-1}v + \cdots + a_1 u v^{n-1})$ ($u$ divides left), thus $u | a_0 v^n \rightarrow u | a_0$
+    - Similar case holds that $v | a_n$
+  - Show that for every positive integer $n$. there is at least one IRD poly of degree $n$ over the integers
+    - Use eisenstein to construct? I.e $f(x) = p + px + \cdots px^{n-1} + qx^n$
+  - If $f(X) \in \mathbb{Z}[X]$ and $p$ is prime, reduce co-effs $p$ to obtain new poly. $f_p(X)  \in \mathbb{Z}_p[X]$. If $f$ is factorable over $\mathbb{Z}$, then $f_p$ is factorable over $\mathbb{Z}_p$
+  - Use above to show that $X^3 + 27X^2 + 5X + 97$ is IRD over $\mathbb{Z}$
+    - Consider over $\mathbb{Z}_3$ must have linear factor (degree is odd, i.e $f(1) = 0 \lor f(2) = 0$)
+  - Show that $\langle n, X \rangle, n \geq 2$ is not principal, and $\mathbb{Z}[X]$ is not PID (but is UFD)
+    - Notice $\langle n, X \rangle$ is maximal, i.e set of $f(X) \in \mathbb{Z}[X]$ where $2 | a_0$, thus if
+  - If $F$ is field, then $F[X, Y]$ 
+# Commutative Algebra
+- 
+# Fields
+ - Let $F$ be a field, then $F[X]$ is a **euclidean domain**, take $\phi : F[X] \rightarrow \mathbb{Z} := deg$, then use euclidean alg. $p, q \in F[X]$, where $deg(p) > deg(q)$, then $p = aq + r$, where $a_n = q_n^{-1}p_n$ (and $n$ is index of leading coeff in $q$), and $deg(r) < deg(p)$
+   - Implies that $F[X]$ is PID $\rightarrow$ UFD (every $p \in F[X]$ can be written as product of IRDs)
+ - **field** - Commutative ring with identity, where $S \subset F\backslash\{0\}$ is multiplicative grp.
+ - **extension** - $K \supseteq F$ is a field-extension, and can be treated as a vector-space over $F$, $E/F$, $E \leq F$
+ - Let $f : F \rightarrow E$ be HM of fields, then $f$ is ring HM (thus inverses are preserved), then $f$ is MM
+   - notice $ker(f)$ is ideal of $F$, thus $ker(f) = \{0\}$ or $ker(f) = F$, notice $1_F \not \in ker(f)$ thus $ker(f) = \{0\}$
+ - Let $f \in F$ be non-constant poly. Then there is $E, F \leq E$, and $\alpha \in E$, where $f(\alpha) = 0$
+   - Consider $F[X]/ \langle f \rangle$, where $F \cong F' \subset F[X]/\langle f \rangle$ (take $a \in F, a + f \in F[X]$, i.e $a_0' = a + a_0$), then $a, b \in F, (a + f)(b + f) = \Sigma_i \Sigma_{0 \leq j \leq i} (a + f)_j(b + f)_{i - j}, a_0' = (a + f)_0 (b + f)_0$
+   - Take $X + f \in F[X]/\langle f \rangle$, then $f(X + f) = \Sigma a_i (X + f) = \Sigma a_i X^i + \Sigma a_i f^i = f + I = I$, and $\alpha = X + f \in F[X]/\langle f \rangle$ is root
+ - $f, g \in F[X]$. Then $f$ and $g$ are relatively prime iff $f,g$ have no common root in any $E/F$
+   - Forward - Suppose $f, g$ are relatively prime, then $a(X), b(X) \in F[X], a(X)f(X) + b(X)g(X) = 1$, (constant, but $f, g$ share a root)
+   - Reverse - Suppose $f, g$ are not relatively prime, then $\langle f , g \rangle = \langle h \rangle$, then take $E$ to be the extension field where $h$'s root exists, 
+- If $f,g$ are monic IRD poly. over $F$, then $f, g$ have no common roots in any extension of $F$
+  - $F[X]$ is UFD, thus $f, g$ prime, and are relatively prime, thus above result holds
+- ### Extensions
+  - Suppose $F$ is field, $E \geq F$, and $f \in F[X]$, where $\alpha \in E, f(\alpha) = 0$, consider the field $F[\alpha]$ (i.e smallest sub-field of $E$ where $f$ has a root)
+  - If $E/F$ and $\alpha \in E$, $\alpha$ is **algebraic** over $F$, if $\exists f \in F[X], f(\alpha) = 0$, otherwise $\alpha$ is **transcendental**, if every element of $E$ is algebraic over $F$ then $E$ is an **algebraic extension** of $F$
+  - Let $\alpha \in E$, where $ \alpha$ is transcendental over $F$, then $I = \{f(x) : f(\alpha) = 0\} \subset F[X]$ is an ideal (closed under addition / scalar multiplication in $F$), thus $I = \langle g \rangle$
+    - Notice, generators unique up to multiplication by associates in $F[X]$ (field elements), thus choose monic
+    - If $g \in F[X]$, $g(\alpha) = 0 \iff m(X) | g(X)$
+      - Forward - $g \in \langle m \rangle$
+      - Reverse - Triv. $g(X) = c(X)m(X) \rightarrow g(\alpha) = c(\alpha)m(\alpha)$
+    - $m(X)$ is monic poly. of least degree such that $m(\alpha) = 0$
+      - Suppose that $l(\alpha) = 0$, then $l \in \langle m \rangle$, and $deg(l) = deg(pm) = deg(p) + deg(m) \geq deg(m)$
+    - $m(X)$ is unique MIRD poly. where $m(\alpha) = 0$
+      - Notice, if $m' \in \langle m \rangle$, then $m' = cm$ (where $c$ must be an associated $m'$ is IRD), thus if $m'$ is monic $c = 1$ and $m = m'$
+      - Notice $m$ IRD, as $m(X) = k(X)h(X)$, where $0 < deg(k) < deg(m) \land 0 < deg(h) < deg(m)$, however $0 = m(\alpha) = h(\alpha)k(\alpha)$, and $F$ is an IRD, thus $h(\alpha) = 0 \lor k(\alpha) = 0$, and WLOG $h \in \langle m \rangle \rightarrow deg(h) \geq deg(m)$ (contradiction)
+  - Intuition, is $E$, the extension of $F$, where $E = F[\alpha_1, \cdots, \alpha_n]$, where for some $f \in F[X], f(\alpha_i) = 0$, $E \cong F[X]/ \langle f \rangle$
+  - **definition** - $F(\alpha)$ is the set of all $\frac{a_0 + a_1 \alpha + \cdots + a_n \alpha^n}{b_0 + \cdots b_m \alpha^m}$ (i.e smallest field containing $F \cup \alpha$
+  - If $\alpha \in E$ is alg. over $F$, and $m$ is min. poly. of $\alpha$ over $F$, where $deg(m) = n$, then $F(\alpha) = F[\alpha]$, and $1, \alpha, \cdots, \alpha_n$ form basis of $E$ over $F$, thus $[E : F] = n$
+    - Show that $F[\alpha] \subset F(\alpha)$
+      - $F[\alpha]$ is a field
+        - take $f \in F[X] \backslash \langle m \rangle$, notice, $m \in F[X]$ is IRD, and thus $f, m$ are relatively prime, and $a(X)f(X) + b(X)m(X) = 1$, thus $a(\alpha)f(\alpha) + b(\alpha)m(\alpha) = a(\alpha)f(\alpha) = 1$, where $f(\alpha) \in F[\alpha]$ and $F[\alpha]$ is a field
+        - Otherwise $f \in \langle m \rangle$, and $f(\alpha) = 0$
+      - $F[\alpha] \cong F[X]/\langle m \rangle$?
+      - $F[\alpha] \subset F(\alpha)$
+        - This follows naturally, where the denominator is $1$
+      - Thus since $\alpha \in F[\alpha] \land F \subset F[\alpha]$, then  $F(\alpha) \subset F[\alpha]$, and $F[\alpha] = F(\alpha)$
+      - Notice $F[\alpha]$ is the span of $1, \alpha, \cdots, \alpha^{n - 1}$, 
+        - Suppose $\exists b_0, \cdots, b_n$, where $0 = b_0 \alpha + \cdots + b_{n- 1} \alpha$, then $f = \Sigma_{n - 1} b_i \alpha^i \in \langle m \rangle$, where $deg(f) < deg(m)$ (contradiction)
+- ### Degree is Multiplicative
+  - Suppose $F \leq K \leq E$ are extensions, and $\alpha_i$ form basis of $E$ over $K$, and $\beta_i$ form basis of $K$ over $F$, then $\alpha_i \beta_j$ form basis of $E$ over $F$
+    - Fix $a \in E$, then $a = \Sigma_i a_i \alpha_i = \Sigma_i \Sigma_j b_j \beta_j \alpha_i, b_j \in F$ (notice $a_i \in K$)
+    - $\alpha_i \beta_j$ are linearly independent
+      - Suppose $\Sigma_i \alpha_i \Sigma_j a_{ij}\beta_j = 0$, then for each $i$, $\Sigma_j a_{ij} \beta_j = 0$, thus $a_{ij} = 0$, and $\alpha_i \beta_j$ are lin. ind.
+  - As a corollary to the above, $[E : F] = [E : K][K : F]$
+- If $E$ is a finite extension of $F$, then $E$ is algebraic extension of $F$
+  - Suppose $[E : F] = n$, then $\alpha \in E$, $(1, \alpha, \cdots, \alpha^n)$ is linearly dependent, thus $a_0 + \cdots + a_n \alpha^n = 0$, and $f(x) = \Sigma_i a_i X^i \in F[X]$
+- **problems**
+  - Let $E$ be an extension of $F$, and $S \subset E$. If $F(S)$ is the SF of $E$ generated by $S$ over $F$, i.e the smallest field $F' \supset F \cup S$
+    - Let $m_s$ be the min. poly. for $s_i \in S$, then $[F(S) : F] = \Pi_s deg(m_s) - |S| + 1$
+  - Assume that $\alpha$ is algebraic over $F$, with $[F[\alpha] : F] = n$, show that $[F[\beta] : F] | [F[\alpha] : F]$
+    - Notice $F[\beta] \subset F[\alpha]$, $\beta = a_0 + \cdots a_{n-1}\alpha^{n-1}$, thus $[F[\alpha] : F] = [F[\alpha] : F[\beta]][F[\beta] : F]$
+  - The minimal poly. of $\sqrt{2}$ over $\mathbb{Q}$ is $X^2 - 2$, thus $\mathbb{Q}[\sqrt{2}] = \{a_0 + \sqrt{2} a_1: a_0, a_1 \in \mathbb{Q}\}$, then minimal poly of $\beta = -1 + \sqrt{2} \in \mathbb{Q}[\sqrt{2}]$ has deg at most 2, find the poly.
+    - $x^2 + 2x - 1$
+  - If $E/F$, and $\alpha \in E$ is transcendental over $F$, show that $F(\alpha)$ is iso-morphic to $F(X)$
+    - MM from $F(\alpha) \rightarrow F(X)$ (naturally exists)
+    - MM from $F(X) \rightarrow F(\alpha)$?
+      - Suppose $\phi : F(X) \rightarrow F(\alpha)$, where $\phi(f/g) = f(\alpha)/g(\alpha)$
+  - If $E/F$, and $\alpha \in E$ is algebraic over $F$, where $m \in F[X]$ is min. poly. let $I = \langle m \rangle$, show that $F(\alpha) \cong F[X]/I$
+    - Consider $\phi : F[X] \rightarrow F(\alpha)$, where $\phi(f) = f(\alpha)$, then $ker(\phi) = \langle m \rangle$, thus $F[X] / \langle m \rangle \cong F(\alpha)$
+  - If $f$ is IRD in $F[X]$, then $I = \langle f \rangle$ is maximal. Show conversely, that if $I$ is a maximal ideal, then $f$ is IRD.
+    - Suppose $I = \langle f \rangle$, consider $f = gh$, then (WLOG), $\langle f \rangle \subset \langle g \rangle$, where $g$ is not a unit, but $\langle f \rangle \supset \langle g \rangle$, and $f, g$ are associates
+  - Suppose $F \leq E \leq L$, with $\alpha \in L$, what is relation of min. poly of $\alpha$ over $F$ and over $E$?
+    - Notice $E[\alpha] \supset F[\alpha] \supset F$, and $E[\alpha] \supset E \supset F$, thus express $[E[\alpha] : F]$  in two ways, and compare
+    - i.e $[F[\alpha] : F] | [E[\alpha] : E]$
+    - Alternative, let $m \in F[X]$ be the min. poly. of $\alpha$ in $F[X] \subset E[X]$, then consider $I$ the ideal of all $f \in E[X]$, where $f(\alpha) = 0$, then $I = \langle m' \rangle, m \in \langle m' \rangle \rightarrow m' | m$
+  - Suppose $\alpha_1, \cdots, \alpha_n$ are algebraic over $F$, show that $[F[\alpha_1, \cdots, \alpha_n] : F] \leq \Pi_i [F[\alpha_i] : F] < \infty$
+    - Apply above thm + use induction on $\alpha_i$ holds for 1, then for $[F[\alpha_1 \cdots \alpha_{n + 1}] : F] = [F[\alpha_1 \cdots \alpha_{n+1}] : F[\alpha_1, \cdots, \alpha_n]][F[\alpha_1, \cdots,\alpha_n] : F]$, take $E = F[\alpha_1, \cdots, \alpha_n]$, then $[F[\alpha_1, \cdots, \alpha_{n + 1}] : F] = [F[\alpha_1, \cdots, \alpha_{n + 1}] : F[\alpha_1, \cdots, \alpha_n]][F[\alpha_1, \cdots, \alpha_n] : F] = [E[\alpha_{n + 1}] : E][E : F]$, apply thm. above to obtain $[E[\alpha_{n + 1}] : E] | [F[\alpha_{n + 1}] : F]$
+## Splitting Fields
+- Let $E \geq F$, and $f \in F[X]$, then $f$ **splits** over $E$, if $f = \lambda(x - \alpha_1) \cdots (x - \alpha_n)$, where $\alpha_i \in E, \lambda \in F$
+- If $K \geq F$, and $f$ splits over $K$, but does not split over any sub-field of $K$, then $K$ is the **splitting field** of $f$
+- If $f \in F[X]$ and $deg(f) = n$, then $f$ has a splitting field $K$ over $F$, with $[K : F] \leq n!$
+  - Notice, $f$ has $n$ roots, thus, for $\alpha_1, f(\alpha_1) = 0 = \Sigma_{0 \leq i \leq n} a_i \alpha^i$, and $[F[\alpha_1] : F]  = n$, next consider, $[F[\alpha_2, \alpha_1] : F[\alpha_1] = n - 1$ (consider $f / (X - \alpha_1)$), and $F[\alpha_1, \cdots, \alpha_n] = [F[\alpha_1, \cdots, \alpha_n] : F[\alpha_1, \cdots, \alpha_{n - 1}]\cdots [F[\alpha_1] : F]$
+- If $\alpha, \beta \in E$ are roots of $f \in F[X]$, then $F(\alpha) \cong F(\beta)$
+  - Consider $\phi : F(\alpha) \rightarrow F(\beta)$, where $f(\alpha) \in F(\alpha), \phi(f(\alpha)) = f(\beta)$ (it is the id. on $F$)
+  - Let $I \subset F[X]$ be the ideal of poly. with root $\alpha$, and $J$ for $\beta$, notice $f \in I \land f \in J$, furthermore, $I = \langle f \rangle = J$ ($f$ is IRD, if not generator, $f' | f$), thus $F[X]/I \cong F(\alpha)$, and $F[X]/J \cong F(\beta)$
+- ## Isomorphism Extension Theorem
+  - Suppose that $F, F'$ are IM fields, and $i$ carries $f \in F[X] \rightarrow f' \in F'[X]$, if $K$ is splitting field for $f$ over $F$, and $K'$ is splitting field for $f'$ over $F'$, then $K \cong K'$
+    - Triv.
+- **problems**
+  - What is degree of splitting field $K$ of $\mathbb{Q}$ of $X^2 - 2X + 4$
+    - Suppose $K' \subset K$, is a sub-field of $K$ in which $X^2 - 2X + 4$ has roots, then $[K' : \mathbb{Q}] | [K : \mathbb{Q}]$ thus $[K' : \mathbb{Q}]$ must be $1 \lor 2$ (simple analysis shows $2$)
+  - Find splitting field $K$ for $X^4 - 2$  over $\mathbb{Q}$, and determine $[K : \mathbb{Q}]$ (4, 2, 1), degree is $2$
+  - Let $\mathcal{C}$ be family of poly. over $F$, and $K/F$, show that the following two conditions are equivalent
+    - Each $f \in \mathcal{C}$ splits over $K$, but if $F \leq K' \leq K$, then it is not true that each $f \in \mathcal{C}$ splits over $K'$
+    - Each $f \in \mathcal{C}$ splits over $K$, and $K$ is generated over $F$ by the roots of all poly. in $\mathcal{C}$
+      - Forward -
+        - Suppose the first condition is held, then if $f_i \in \mathcal{C}, f = \lambda_i(X - \alpha_{i1}) \cdots (X - \alpha_{in})$, then, $K_i = F(\alpha_{i1}, \cdots, \alpha_{in}) \subset K$ ($f_i$ splits in $K$), similarly, if $K' \subset K = F(\alpha_{11}, \cdots, \alpha_{nn})$, then one of the $f_i$ is not fully split.
+      - Reverse - Triv.
+  - SUppose $K$ is a splitting field for the finite set of poly. $\{f_1, \cdots, f_n\}$, notice, for each $f_i \in F$, $\cap_i \langle f_i \rangle = \langle m \rangle$, then the splitting field of $f_i$ is the splitting field of $m$,
+    - Let $K$ be a splitting field for $m$, then $m = \lambda f_1 \cdots f_n$
+  - If $m,n$ are distinct square-free integers, greater than 1, show that the splitting field, $\mathbb{Q}(\sqrt{m}, \sqrt{n})$ of $(X^2 - m)(X^2 - n)$ has deg. 4 over $\mathbb{Q}$
+    - Must have at least deg $2$
+- ## Algebraic Closures
+  - If $C$ is a field, the following are equivalent
+    - for all $f \in C[X]$, $f$ has at least one root in $C$
+    - All $f \in C[X]$ splits in $C$
+    - Every irreducible poly. in $C$ is linear
+    - $C$ has no proper algebraic extensions
+  - Proofs
+    - $1 \rightarrow 2$
+      - Fix $f \in C[X]$, then $\alpha \in C, f(X) = g(X)(X - \alpha), g(X) \in C[X]$, and continue until $f$ splits
+    - $2 \rightarrow 3$
+      - Fix $f \in C[X]$, Then if $deg(f) > 1$, $f$ splits, and $f$ is not IRD.
+    - $C/F$, $C$ has no proper algebraic extensions
+      - Let $E \geq C$, be an AE of $F$, then take $\alpha \in E$, notice, $\exists f \in F[X]$, where $f(\alpha) = 0$, take $I = \{f(\alpha) = 0: f \in C[X]\}$, then $\langle I \rangle = \langle m \rangle$ where $m$ is IRD, but $deg(m) = 1$, thus $\alpha \in C$
+    - $4 \rightarrow 1$
+      - Suppose $C$ has no proper AEs, then fix $f \in C[X]$, where $f$ has no roots in $C$, then take $E$ to be the min. extension of $C$ where $f$ has a root, thus $E \geq C \land C \not = E$ (contradiction)
+  - **definitions**
+    - If $C$ is a field, and any (thus all) of the above properties hold, then $C$ is **algebraically closed**
+    - If any field extension $C/F$ satisfies the above properties and is algebraic over $F$, then $C$ is the **algebraic closure** of $F$
+  - If $E/F$, and $A \subset E$, where $a \in A$ is algebraic over $f$, then $A$ is a field, i.e $A = \overline{F}\cap E$
+    - Notice, $0, 1 \in A$, fix $a, b \in A$, then consider $F(\alpha, \beta)$, where $[F(\alpha, \beta) : F] = 2$ (finite, extension), and is thus algebraic over $F$, therefore $F(\alpha, \beta) \subset A$, thus the product, sum, difference, and fraction are in $A$
+  - If $E$ is algebraic over $K$, and $K$ is algebraic over $F$, then $E$ is algebraic over $F$
+    - Fix $\alpha \in E$, then $f \in K[X], f = \Sigma a_i X^i$ has $\alpha$ as a root, and $a_i \in K$, consider $K = F(a_1, \cdots, a_n)$, notice, $[K:F]$ is finite ($a_i$ is algebraic over $F$), thus $K$ is algebraic over $F$, furthermore, $[K[\alpha] : K] = n$, thus $[K[\alpha] : F] \leq [K[\alpha] : K][K : F]$, thus $K[\alpha]$ is algebraic over $F$, and since $\alpha \in K[\alpha]$, $\alpha$ is algebraic over $F$
+  - Let $C$ be AE of $F$. Then $C$ is AC of $F$ iff every NC poly. in $F[X]$ splits over $F$
+    - Forward
+      - Suppose $C$ is ALC of $F$. Then $C$ is algebraically closed, thus for $f \in F[X] \subset C[X]$, then $f$ splits in $C$
+    - Reverse
+      - Suppose $\forall f \in F[X]$, $f$ splits over $C$. Fix $E \geq C$, where $E$ is AE of $C$, then fix $\alpha \in E$, then by above, there exists $m \in F[X]$ (min. poly.), where $m(\alpha) = 0$, however, $m$ splits over $C$, thus $\alpha \in C$, thus $E \subset C$, and $E = C$, thus $C$ is algebraically closed.
+  - **problems**
+    - Suppose $E \geq F$, where $[E:F] = n$, then $E$ is generated by finitely many elements that are algebraic over $F$
+      - Triv.
+    - Show that there are countably many numbers that are algebraic over $\mathbb{Q}$
+      - Let $\alpha \in \mathbb{C}$, where $f \in \mathbb{Q}[X]$ such that $f(\alpha) = 0$, then take $f' = \beta f \in \mathbb{Z}[X]$, where $\beta$ is the lcm of the denominators in $f$, thus there are countably many of such polynomials $f'$
+    - Give example of $C / F$, where $C$ is AC but not AE of $F$
+      - 
+# Number Theory
+- Let $a \in \mathbb{Z}$, then $ord_p(a) = n \iff p^n | a \land p^{n + 1} \not | a$
+- If $a, b \in \mathbb{Z}$, then $\exist q, r \in \mathbb{Z}$ where $r < b$, 
+  - Fix $a, b \in \mathbb{Z}$, where WLOG $a > b$, then let $S = \{x = a - pb > 0: p \in \mathbb{Z}\}$, notice $a \in S$ thus $S$ is non-empty, fix $r = min( S)$, if $r = a - pb \geq b$, then $r' = a - (p + 1)b < r \in S$, contradiction, thus $r < b$
+- Suppose $a | bc$ and $(a, b) = 1$
